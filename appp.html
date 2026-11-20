@@ -66,10 +66,43 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 </style>
 </head>
 <body>
-<div class="top">...</div>
-<div class="live-bar">...</div>
-<div class="page on" id="p-lobby">...</div>
-<div class="page" id="p-crash">...</div>
+<div class="top">
+  <div class="logo">ZetUP <span class="ver-badge">FAIR</span></div>
+  <div class="top-r">
+    <div class="bal"><span id="bal">0.00</span> ⭐</div>
+    <button class="top-btn" onclick="openM('depM')">+ Пополнить</button>
+    <div class="ava" id="ava" onclick="goTab('prof',document.getElementById('nProf'))">Z</div>
+  </div>
+</div>
+<div class="live-bar">
+  <span style="color:#34d399;font-weight:800">● LIVE:</span>
+  <span id="liveFeed" style="color:#cbd5e1;font-weight:600">@alex_k забрал 840 ⭐ в Орбите X • @maria_v выбила 150 ⭐ в Боксе</span>
+</div>
+<div class="page on" id="p-lobby">
+  <div class="lobby">
+    <div class="gcard g1" onclick="openGame('crash')"><div class="online"><span class="dot"></span>184 играют</div><svg class="art" viewBox="0 0 100 100"><path d="M50 8 C68 28 72 55 66 76 L34 76 C28 55 32 28 50 8 Z" fill="#e2e8f0"/><path d="M50 8 C60 20 63 30 62 34 L38 34 C37 30 40 20 50 8 Z" fill="#10b981"/><path d="M32 56 L14 78 L34 72 Z M68 56 L86 78 L66 72 Z" fill="#0ea5e9"/><circle cx="50" cy="48" r="11" fill="#0f172a" stroke="#38bdf8" stroke-width="3"/><path d="M40 76 L50 96 L60 76 Z" fill="#f59e0b"/></svg><div class="gtitle">Орбита X</div></div>
+    <div class="gcard g2" onclick="openGame('mines')"><div class="online"><span class="dot"></span>112 играют</div><svg class="art" viewBox="0 0 100 100"><polygon points="50,10 85,35 70,85 30,85 15,35" fill="#38bdf8"/><polygon points="50,10 68,35 50,85 32,35" fill="#fff" opacity=".3"/><circle cx="76" cy="22" r="4" fill="#fff"/></svg><div class="gtitle">Кристаллы</div></div>
+    <div class="gcard g3" onclick="goTab('cases',document.getElementById('nCase'))"><div class="online"><span class="dot"></span>260 играют</div><svg class="art" viewBox="0 0 100 100"><rect x="16" y="34" width="68" height="48" rx="10" fill="#a855f7" stroke="#e879f9" stroke-width="2"/><path d="M14 38 L24 20 L76 20 L86 38 Z" fill="#7e22ce"/><rect x="42" y="30" width="16" height="22" rx="4" fill="#facc15"/></svg><div class="gtitle">Кибер-Боксы</div></div>
+    <div class="gcard g4" onclick="openGame('dice')"><div class="online"><span class="dot"></span>75 играют</div><svg class="art" viewBox="0 0 100 100"><rect x="18" y="18" width="64" height="64" rx="16" fill="#10b981" stroke="#6ee7b7" stroke-width="3"/><circle cx="35" cy="35" r="6" fill="#fff"/><circle cx="65" cy="35" r="6" fill="#fff"/><circle cx="50" cy="50" r="6" fill="#facc15"/><circle cx="35" cy="65" r="6" fill="#fff"/><circle cx="65" cy="65" r="6" fill="#fff"/></svg><div class="gtitle">Куб Удачи</div></div>
+  </div>
+  <div class="card" style="margin-top:2px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:800;color:#34d399">🛡️ Контроль честности SHA-256</div><div style="font-size:11px;color:#94a3b8">Прозрачный алгоритм и мгновенные выплаты</div></div><button class="qb" style="padding:7px 10px" onclick="openM('fairM')">Инфо</button></div>
+</div>
+  <div class="page" id="p-crash">
+  <div class="back-bar"><button class="back-btn" onclick="backLobby()">← В лобби</button><div class="bank-pill">Банк раунда: <span id="roundBank">0</span> ⭐</div></div>
+  <div class="hist" id="hist"><div class="tag">2.45x</div><div class="tag gold">48.20x</div><div class="tag">1.18x</div><div class="tag">4.80x</div></div>
+  <div class="sky">
+    <canvas id="cv"></canvas>
+    <div class="hash-tag" id="rHash">SHA256: 8f94e2...c10a</div>
+    <div class="mult" id="mult">1.00x</div>
+    <div class="st" id="st">Старт через 5 сек...</div>
+  </div>
+  <div class="bets-feed" id="betsFeed"></div>
+  <div class="box">
+    <div class="row"><input class="inp" type="number" id="cbet" value="10"><button class="qb" onclick="setMin('cbet',10)">MIN 10</button><button class="qb" onclick="xBet('cbet',2)">2x</button><button class="qb" onclick="maxBet('cbet',10)">MAX</button></div>
+    <button class="btn" id="cbtn" onclick="clickCrash()">ПОСТАВИТЬ (от 10 ⭐)</button>
+  </div>
+</div>
+
 <div class="page" id="p-mines">
   <div class="back-bar"><button class="back-btn" onclick="backLobby()">← В лобби</button><b>💎 Кристаллы</b><span style="color:#34d399;font-weight:800" id="mwin">0.00 ⭐</span></div>
   <div class="mgrid" id="mgrid"></div>
