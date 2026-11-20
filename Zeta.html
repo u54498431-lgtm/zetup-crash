@@ -208,5 +208,110 @@ var pDone=false;function usePromo(){if(pDone)return alert('Промокод уж
 function doWithdraw(){var s=+document.getElementById('outSum').value,w=document.getElementById('outWallet').value.trim();if(totalDep<500)return alert('🔒 Вывод недоступен! Сначала пополните баланс минимум на 500 ⭐ (сейчас пополнено: '+totalDep+' ⭐).');if(s<1500)return alert('Минимальная сумма вывода — 1500 ⭐!');if(s>bal)return alert('Недостаточно звёзд (нужно минимум 1500 ⭐).');if(!w)return alert('Укажите ваш @username или адрес TON!');updBal(bal-s);closeM('outM');alert('✅ Заявка на вывод '+s+' ⭐ принята! Реквизиты: '+w);}
 waitRound();
 </script>
+<script>
+(function() {
+  const API = "https://sslip.io";
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+  const user = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || { id: 8990817653, username: "player" };
+  let selectedPayMethod = "stars";
+
+  // 1. Загружаем реальный баланс игрока с сервера при входе
+  async function syncServerBalance() {
+    try {
+      const r = await fetch(`${API}/api/balance/${user.id}?username=${encodeURIComponent(user.username || "")}`);
+      const data = await r.json();
+      if (typeof data.balance === "number") {
+        window.serverStarsBalance = data.balance;
+        document.querySelectorAll("*").forEach(el => {
+          if (el.children.length === 0 && /⭐\s*0\.00|0\.00\s*⭐/.test(el.textContent)) {
+            el.textContent = el.textContent.replace("0.00", data.balance.toFixed(2));
+          }
+        });
+      }
+    } catch (e) {}
+  }
+  syncServerBalance();
+
+  // 2. Отслеживаем выбор способа оплаты (Stars / СБП / TON)
+  document.addEventListener("click", (e) => {
+    const txt = (e.target.innerText || "").trim();
+    if (txt.includes("Stars")) selectedPayMethod = "stars";
+    if (txt.includes("СБП")) selectedPayMethod = "sbp";
+    if (txt.includes("TON")) selectedPayMethod = "ton";
+  }, true);
+
+  // 3. Перехватываем нажатие кнопки «Пополнить» внутри окна пополнения
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const label = (btn.innerText || "").trim();
+
+    if (label === "Пополнить" && btn.closest("[class*='modal'], [id*='modal'], div")) {
+      const modal = btn.parentElement;
+      const input = modal && modal.querySelector("input[type='number'], input");
+      if (!input) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+
+      const stars = parseInt(input.value || "0", 10);
+      if (stars < 10) return alert("Минимум 10 ⭐");
+
+      if (selectedPayMethod === "stars") {
+        const res = await fetch(`${API}/api/stars/invoice`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id, stars })
+        });
+        const data = await res.json();
+        if (data.invoice_link && tg && tg.openInvoice) {
+          tg.openInvoice(data.invoice_link, (status) => {
+            if (status === "paid") setTimeout(syncServerBalance, 1000);
+          });
+        } else if (data.invoice_link) {
+          window.open(data.invoice_link, "_blank");
+        }
+      } else {
+        // Заявка на СБП или TON (придёт тебе в личку бота с кнопкой /add)
+        await fetch(`${API}/api/deposit/manual`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user.id,
+            username: user.username || "",
+            method: selectedPayMethod.toUpperCase(),
+            amount_raw: stars,
+            stars: +(stars * 1.05).toFixed(2)
+          })
+        });
+        alert(`Заявка на ${stars} ⭐ (${selectedPayMethod.toUpperCase()}) отправлена! После перевода звёзды зачислятся на баланс.`);
+      }
+    }
+
+    // 4. Перехватываем кнопку «Заказать вывод»
+    if (label.includes("Заказать вывод")) {
+      const modal = btn.parentElement;
+      const input = modal && modal.querySelector("input");
+      const amount = parseFloat((input && input.value) || "0");
+      if (amount < 1500) return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      const wallet = prompt("Укажите ваш TON-кошелёк или @username для получения звёзд:");
+      if (!wallet) return;
+      const res = await fetch(`${API}/api/withdraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id, username: user.username || "", stars: amount, wallet })
+      });
+      if (res.ok) {
+        alert("Заявка на вывод принята! Ожидайте выплату.");
+        syncServerBalance();
+      } else {
+        alert("Для вывода нужен депозит от 500 ⭐ и баланс от 1500 ⭐.");
+      }
+    }
+  }, true);
+})();
+</script>
 </body>
 </html>
