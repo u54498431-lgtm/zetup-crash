@@ -78,28 +78,8 @@ body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px
     </div>
     <div class="gcard" onclick="goGame('upgrade')">
       <img src="IMG_3772.jpeg" onerror="this.style.display='none'">
-      <div class="gcard-top"><span class="g-live">94 играют</span></div>
-      <h3>🎡 Апгрейд</h3>
-    </div>
-
-</div>
-
-<div id="tab-games" class="sec on">
-  <div class="lobby">
-    <div class="gcard" onclick="goGame('crash')">
-      <img src="rocket_card.png" onerror="this.style.display='none'">
-      <div class="gcard-top"><span class="g-live">143 играют</span></div>
-      <h3>🚀 Ракетка</h3>
-    </div>
-    <div class="gcard" onclick="goGame('road')">
-      <img src="road_card.png" onerror="this.style.display='none'">
-      <div class="gcard-top"><span class="g-live">162 играют</span></div>
-      <h3>🐊 Трасса</h3>
-    </div>
-    <div class="gcard" onclick="goGame('mines')">
-      <img src="mines_card.png" onerror="this.style.display='none'">
-      <div class="gcard-top"><span class="g-live">218 играют</span></div>
-      <h3>💎 Мины</h3>
+      
+    
     </div>
     <div class="gcard" onclick="goGame('upgrade')">
       <img src="upgrade_card.png" onerror="this.style.display='none'">
@@ -182,7 +162,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px
     <canvas id="cvUpg" width="220" height="220" style="margin:0 auto;display:block"></canvas>
     <div class="bet-row"><span>⭐ Ставка:</span><input type="number" id="uBet" value="10" min="10" oninput="updUpg()"><button class="qbtn" onclick="adj('uBet',2);updUpg()">2×</button></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px" id="uMults">
-      <button class="qbtn" style="padding:9px;background:#312e81;color:#fff" onclick="setUMult(2,this)">×2</button>
+      <button class="qbtn юз" style="padding:9px;background:#312e81;color:#fff" onclick="setUMult(2,this)">×2</button>
       <button class="qbtn" style="padding:9px" onclick="setUMult(3,this)">×3</button>
       <button class="qbtn" style="padding:9px" onclick="setUMult(5,this)">×5</button>
       <button class="qbtn" style="padding:9px" onclick="setUMult(10,this)">×10</button>
@@ -427,10 +407,9 @@ function roadCash(){
 }
 function drawRoad(){
   const cv=document.getElementById("cvRoad"),ctx=cv.getContext("2d");
-  ctx.fillStyle="#cbd5e1";ctx.fillRect(0,0,85,250);ctx.fillStyle="#1e243b";ctx.fillRect(85,0,295,250);
-  ctx.strokeStyle="rgba(255,255,255,.2)";ctx.setLineDash([12,12]);
-  [180,275].forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,250);ctx.stroke();});ctx.setLineDash([]);
-  for(let i=0;i<3;i++){
+  ctx.fillStyle="#cbd5e1";ctx.fillRect(0,0,85,250);ctx.fillStyle="#1e243b";ctx.fillRect(
+    ctx.strokeStyle="rgba(255,255,255,.2)";new Array(180,275).forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,250);ctx.stroke();});
+for(let i=0;i<3;i++){
     const lx=132+i*95,m=rMults[rDiff][Math.min(4,Math.max(0,rStep>2?rStep-2+i:i))];
     ctx.fillStyle="#334155";ctx.beginPath();ctx.arc(lx,125,24,0,6.28);ctx.fill();
     ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.textAlign="center";ctx.fillText("×"+m.toFixed(2).replace('.',','),lx,165);
@@ -477,11 +456,29 @@ function drawUpg(ang){
   ctx.strokeStyle="#00f5a0";ctx.beginPath();ctx.arc(110,110,85,-1.57,-1.57+winArc);ctx.stroke();
   ctx.save();ctx.translate(110,110);ctx.rotate(ang);ctx.fillStyle="#fbbf24";ctx.beginPath();ctx.moveTo(0,-72);ctx.lineTo(-7,-52);ctx.lineTo(7,-52);ctx.fill();ctx.restore();
   ctx.fillStyle="#fff";ctx.font="900 22px sans-serif";ctx.textAlign="center";ctx.fillText("×"+uMult,110,118);
-}
+
 function spinUpgrade(){
-  if(uSpin)return;const v=+(document.getElementById("uBet").value||0);if(v<10||v>bal)return;
-  setBal(bal-v);uSpin=true;const won=Math.random()<(0.95/uMult),winArc=(0.95/uMult)*6.28;
-  const target=12.56+(won?Math.random()*winArc:winArc+Math.random()*(6.28-winArc));
+  if(uSpin)return;const v=+(document.getElementById("uBet").value||0);if(v<10||v>bal)return;setBal(bal-v);uSpin=true;
+  const won=Math.random()<(0.95/uMult),winArc=(0.95/uMult)*6.28,target=12.56+(won?Math.random()*winArc:winArc+Math.random()*(6.28-winArc));
   let cur=0;const iv=setInterval(()=>{cur+=(target-cur)*0.12;drawUpg(cur);if(Math.abs(target-cur)<0.02){clearInterval(iv);uSpin=false;if(won){setBal(bal+v*uMult);alert(`🎉 Апгрейд успешен! +${v*uMult} ⭐`);}else alert("Не повезло в этот раз!");}},20);
 }
-
+function spinCase(type,cost){
+  if(type==="daily"){const last=+(localStorage.getItem("z_daily")||0);if(Date.now()-last<86400000)return alert("Бесплатный подарок раз в 24 часа!");localStorage.setItem("z_daily",Date.now());}
+  else{if(bal<cost)return alert("Недостаточно звёзд!");setBal(bal-cost);}
+  const r=Math.random(),prize=type==="daily"?(r<0.95?{n:"1 ⭐",v:1,nft:false}:(r<0.99?{n:"3 ⭐",v:3,nft:false}:{n:"15 ⭐",v:15,nft:false})):(r<0.85?{n:"35 ⭐",v:35,nft:false}:(r<0.98?{n:"120 ⭐",v:120,nft:false}:{n:"NFT Pepe 🐸",v:1500,nft:true}));
+  const pool=new Array({n:"1 ⭐",v:1},{n:"35 ⭐",v:35},{n:"120 ⭐",v:120},{n:"NFT Pepe 🐸",v:1500},{n:"15 ⭐",v:15});
+  const tr=document.getElementById("rTrack");tr.style.transition="none";tr.style.transform="translateX(0px)";
+  let html="";for(let i=0;i<30;i++){const x=i===24?prize:pool[Math.floor(Math.random()*pool.length)];html+=`<div class="r-item"><div style="font-size:22px">${x.n.includes("NFT")?"🐸":"⭐"}</div><div style="margin-top:4px;color:#00f5a0">${x.n}</div></div>`;}
+  tr.innerHTML=html;document.getElementById("caseResBox").style.display="none";openM("caseM");
+  setTimeout(()=>{tr.style.transition="transform 4s cubic-bezier(.1,.85,.2,1)";tr.style.transform="translateX(-2090px)";},50);
+  setTimeout(()=>{
+    document.getElementById("caseResBox").style.display="block";document.getElementById("caseWinTxt").textContent="Выпало: "+prize.n;
+    document.getElementById("btnSellPrize").textContent=`Забрать ${prize.v} ⭐`;document.getElementById("btnSellPrize").onclick=()=>{setBal(bal+prize.v);closeM("caseM");};
+    const bn=document.getElementById("btnTakeNft");bn.style.display=prize.nft?"block":"none";bn.onclick=()=>{closeM("caseM");alert("Заявка на отправку NFT отправлена администратору!");};
+  },4150);
+}
+async function pingOnline(){try{const r=await fetch(`${API}/api/ping`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id})});const d=await r.json();if(typeof d.online==="number")document.querySelector(".online").textContent=d.online;}catch(e){}}
+window.onload=()=>{syncBal();pingOnline();setInterval(pingOnline,15000);renderCHist();buildMines();startCrashLoop();drawSpace();drawRoad();drawUpg(0);};
+</script>
+</body>
+</html>
