@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ZetUP Crash</title>
+  <script src="https://telegram.org"></script>
+  <script src="https://unpkg.com"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background: #0b0e17; color: #fff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #131826; border-bottom: 1px solid #1f263b; }
+    .logo { font-weight: 800; font-size: 20px; background: linear-gradient(90deg, #a855f7, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .balance-box { display: flex; align-items: center; gap: 8px; background: #1c2336; padding: 6px 12px; border-radius: 12px; font-weight: 700; font-size: 14px; border: 1px solid #2d3754; }
+    .add-btn { background: #7c3aed; color: #fff; border: none; width: 22px; height: 22px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+    .history { display: flex; gap: 6px; padding: 8px 16px; overflow-x: auto; background: #0e121d; }
+    .badge { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .badge.low { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .badge.mid { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .badge.high { background: rgba(234, 179, 8, 0.15); color: #facc15; }
+
+    .game-area { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at center, #1a1635 0%, #0b0e17 80%); overflow: hidden; }
+    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .multiplier { position: relative; z-index: 2; font-size: 54px; font-weight: 900; text-shadow: 0 0 25px rgba(168, 85, 247, 0.6); transition: color 0.2s; }
+    .multiplier.crashed { color: #ef4444; text-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
+    .status-text { position: relative; z-index: 2; font-size: 14px; color: #94a3b8; margin-top: 6px; font-weight: 600; }
+
+    .controls { background: #131826; padding: 16px; border-top: 1px solid #1f263b; border-radius: 20px 20px 0 0; }
+    .bet-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .bet-input-wrap { flex: 1; display: flex; align-items: center; background: #0b0e17; border: 1px solid #2d3754; border-radius: 12px; padding: 0 12px; }
+    .bet-input-wrap input { width: 100%; background: transparent; border: none; color: #fff; font-size: 18px; font-weight: 700; padding: 12px 0; outline: none; }
+    .quick-btns { display: flex; gap: 6px; }
+    .q-btn { background: #1c2336; color: #cbd5e1; border: 1px solid #2d3754; border-radius: 10px; padding: 0 12px; font-weight: 700; cursor: pointer; }
+    .action-btn { width: 100%; padding: 16px; border: none; border-radius: 14px; font-size: 18px; font-weight: 800; color: #fff; cursor: pointer; transition: 0.2s; background: linear-gradient(90deg, #7c3aed, #2563eb); box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
+    .action-btn.cashout { background: linear-gradient(90deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10; justify-content: center; align-items: flex-end; }
+    .modal-content { background: #131826; width: 100%; padding: 20px; border-radius: 24px 24px 0 0; border-top: 1px solid #2d3754; }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 14px; display: flex; justify-content: space-between; }
+    .pay-option { background: #1c2336; padding: 14px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; border: 1px solid #2d3754; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">ZetUP</div>
+    <div id="ton-connect"></div>
+    <div class="balance-box">
+      <span id="balance">1000.00</span> ⭐
+      <button class="add-btn" onclick="openDeposit()">+</button>
+    </div>
+  </div>
+
+  <div class="history" id="history">
+    <div class="badge mid">2.45x</div>
+    <div class="badge low">1.18x</div>
+    <div class="badge high">14.80x</div>
+    <div class="badge low">1.64x</div>
+    <div class="badge mid">3.12x</div>
+  </div>
+
+  <div class="game-area">
+    <canvas id="canvas"></canvas>
+    <div class="multiplier" id="multiplier">1.00x</div>
+    <div class="status-text" id="status">Ожидание ставок...</div>
+  </div>
+
+  <div class="controls">
+    <div class="bet-row">
+      <div class="bet-input-wrap">
+        <input type="number" id="betAmount" value="50" min="1" />
+        <span>⭐</span>
+      </div>
+      <div class="quick-btns">
+        <button class="q-btn" onclick="multBet(0.5)">½</button>
+        <button class="q-btn" onclick="multBet(2)">2x</button>
+        <button class="q-btn" onclick="maxBet()">MAX</button>
+      </div>
+    </div>
+    <button class="action-btn" id="actionBtn" onclick="handleAction()">ПОСТАВИТЬ</button>
+  </div>
+
+  <div class="modal" id="depositModal">
+    <div class="modal-content">
+      <div class="modal-title">
+        <span>Пополнение баланса</span>
+        <span style="cursor:pointer;color:#94a3b8" onclick="closeDeposit()">✕</span>
+      </div>
+      <div class="pay-option" onclick="demoTopup(500)">
+        <span>⭐ Telegram Stars (Демо +500)</span>
+        <span style="color:#a855f7">Мгновенно →</span>
+      </div>
+      <div class="pay-option" onclick="alert('Подключите TON кошелек в шапке для депозита в TON и NFT')">
+        <span>💎 Криптовалюта TON / NFT</span>
+        <span style="color:#3b82f6">TON Connect →</span>
+      </div>
+      <div class="pay-option" onclick="alert('Оплата рублями (СБП) подключается после привязки кассы CrystalPAY/AAIO')">
+        <span>💳 Карта РФ / СБП (Рубли)</span>
+        <span style="color:#10b981">От 100 ₽ →</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://github.io',
+      buttonRootId: 'ton-connect'
+    });
+
+    let balance = 1000.00;
+    let currentBet = 0;
+    let gameState = 'WAITING';
+    let multiplier = 1.00;
+    let crashPoint = 1.00;
+    let animFrame;
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const multEl = document.getElementById('multiplier');
+    const statusEl = document.getElementById('status');
+    const btnEl = document.getElementById('actionBtn');
+    const balEl = document.getElementById('balance');
+
+    function resize() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function updateBalance(val) {
+      balance = val;
+      balEl.innerText = balance.toFixed(2);
+    }
+
+    function multBet(factor) {
+      const inp = document.getElementById('betAmount');
+      inp.value = Math.max(1, Math.floor(Number(inp.value) * factor));
+    }
+    function maxBet() {
+      document.getElementById('betAmount').value = Math.floor(balance);
+    }
+
+    function openDeposit() { document.getElementById('depositModal').style.display = 'flex'; }
+    function closeDeposit() { document.getElementById('depositModal').style.display = 'none'; }
+    function demoTopup(amount) {
+      updateBalance(balance + amount);
+      closeDeposit();
+    }
+
+    function generateCrashPoint() {
+      const r = Math.random();
+      if (r < 0.05) return 1.00;
+      return Math.max(1.01, Math.floor((0.96 / (1 - r)) * 100) / 100);
+    }
+
+    function startWaiting() {
+      gameState = 'WAITING';
+      multiplier = 1.00;
+      multEl.classList.remove('crashed');
+      multEl.innerText = '1.00x';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (currentBet > 0) {
+        btnEl.innerText = `СТАВКА ПРИНЯТА (${currentBet} ⭐)`;
+        btnEl.disabled = true;
+      } else {
+        btnEl.innerText = 'ПОСТАВИТЬ';
+        btnEl.classList.remove('cashout');
+        btnEl.disabled = false;
+      }
+
+      let timeLeft = 5;
+      statusEl.innerText = `Старт через ${timeLeft} сек...`;
+      const timer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft > 0) {
+          statusEl.innerText = `Старт через ${timeLeft} сек...`;
+        } else {
+          clearInterval(timer);
+          startFlying();
+        }
+      }, 1000);
+    }
+
+    function startFlying() {
+      gameState = 'FLYING';
+      crashPoint = generateCrashPoint();
+      statusEl.innerText = 'РАКЕТА В ПОЛЁТЕ!';
+      const startTime = Date.now();
+
+      if (currentBet > 0) {
+        btnEl.disabled = false;
+        btnEl.classList.add('cashout');
+      } else {
+        btnEl.disabled = true;
+        btnEl.innerText = 'ИДЁТ РАУНД...';
+      }
+
+      function loop() {
+        const elapsed = (Date.now() - startTime) / 1000;
+        multiplier = Math.pow(Math.E, 0.08 * elapsed);
+
+        if (multiplier >= crashPoint) {
+          multiplier = crashPoint;
+          crash();
+          return;
+        }
+
+        multEl.innerText = multiplier.toFixed(2) + 'x';
+        if (currentBet > 0) {
+          const win = (currentBet * multiplier).toFixed(2);
+          btnEl.innerText = `ЗАБРАТЬ ${win} ⭐`;
+        }
+
+        drawRocket(elapsed);
+        animFrame = requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    function drawRocket(elapsed) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
