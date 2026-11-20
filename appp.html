@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ZetUP</title>
+<script async src="https://telegram.org"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{height:100dvh;overflow:hidden;background:radial-gradient(circle at 20% 10%,#1e1b4b 0%,#0f172a 55%,#09131d 100%);color:#fff;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(15,23,42,.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(56,189,248,.18);flex-shrink:0}
+.logo{font-weight:900;font-size:21px;background:linear-gradient(90deg,#34d399,#38bdf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:5px}
+.ver-badge{background:rgba(52,211,153,.15);border:1px solid #34d399;color:#34d399;font-size:10px;padding:2px 6px;border-radius:6px;-webkit-text-fill-color:#34d399}
+.top-r{display:flex;align-items:center;gap:7px}
+.bal{background:rgba(30,41,59,.9);padding:6px 11px;border-radius:12px;font-weight:800;font-size:13px;border:1px solid rgba(52,211,153,.35)}
+.top-btn{background:linear-gradient(135deg,#10b981,#0ea5e9);border:none;color:#fff;padding:7px 12px;border-radius:12px;font-weight:800;font-size:13px;box-shadow:0 4px 12px rgba(16,185,129,.3)}
+.ava{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;border:1.5px solid #38bdf8}
+.live-bar{background:rgba(9,13,22,.85);padding:5px 12px;font-size:11px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(56,189,248,.12);overflow:hidden;white-space:nowrap;flex-shrink:0}
+.page{flex:1;display:none;flex-direction:column;overflow-y:auto;min-height:0;padding-bottom:12px}
+.page.on{display:flex}
+.lobby{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:12px 14px}
+.gcard{position:relative;height:146px;border-radius:20px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;border:1px solid rgba(255,255,255,.15);box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.g1{background:linear-gradient(145deg,#0f766e,#1e1b4b)}.g2{background:linear-gradient(145deg,#4338ca,#1e1b4b)}
+.g3{background:linear-gradient(145deg,#7e22ce,#1e1b4b)}.g4{background:linear-gradient(145deg,#047857,#0f172a)}
+.online{align-self:flex-start;background:rgba(9,13,22,.6);padding:4px 9px;border-radius:20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399}
+.art{width:62px;height:62px;align-self:center;filter:drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+.gtitle{font-weight:900;font-size:15px}
+.back-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(15,23,42,.85);border-bottom:1px solid rgba(56,189,248,.18);flex-shrink:0}
+.back-btn{background:#1e293b;border:1px solid #38bdf8;color:#38bdf8;padding:5px 10px;border-radius:8px;font-weight:800;font-size:12px}
+.bank-pill{background:rgba(16,185,129,.15);border:1px solid #10b981;color:#34d399;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:800}
+.hist{display:flex;gap:5px;padding:6px 14px;background:#090e1a;overflow-x:auto;flex-shrink:0}
+.tag{padding:3px 8px;border-radius:7px;font-size:11px;font-weight:800;background:#1e293b;color:#38bdf8}
+.tag.gold{background:#422006;color:#facc15;border:1px solid #eab308}
+.sky{position:relative;height:190px;display:flex;flex-direction:column;align-items:center;padding-top:10px;background:radial-gradient(circle at 50% 60%,#2e1065 0%,#0f172a 65%,#060d14 100%);overflow:hidden;flex-shrink:0}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.hash-tag{position:relative;z-index:2;font-size:10px;color:#64748b;background:rgba(0,0,0,.45);padding:2px 8px;border-radius:8px;margin-bottom:2px;font-family:monospace}
+.mult{position:relative;z-index:2;font-size:44px;font-weight:900;text-shadow:0 0 24px rgba(52,211,153,.75)}
+.st{position:relative;z-index:2;font-size:12px;color:#cbd5e1;font-weight:700}
+.bets-feed{flex:1;overflow-y:auto;padding:6px 14px;background:#090e1a;display:flex;flex-direction:column;gap:5px}
+.b-row{display:flex;justify-content:space-between;align-items:center;background:rgba(30,41,59,.55);padding:6px 10px;border-radius:9px;font-size:12px;border:1px solid rgba(255,255,255,.05)}
+.b-row.won{border-color:rgba(52,211,153,.4);background:rgba(6,78,59,.35)}
+.box{background:rgba(15,23,42,.95);padding:10px 14px;border-top:1px solid rgba(56,189,248,.18);flex-shrink:0}
+.row{display:flex;gap:6px;margin-bottom:8px}
+.inp{flex:1;background:#090e1a;border:1px solid #334155;border-radius:10px;padding:8px 10px;color:#fff;font-size:16px;font-weight:700;width:100%}
+.qb{background:#1e293b;border:1px solid #334155;color:#fff;border-radius:10px;padding:0 11px;font-weight:700;font-size:13px}
+.btn{width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(90deg,#10b981,#0ea5e9)}
+.btn.win{background:linear-gradient(90deg,#f59e0b,#eab308);color:#0f172a}.btn:disabled{opacity:.5}
+.mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:100%;max-width:290px;margin:auto;padding:6px}
+.cell{aspect-ratio:1;background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid #334155;border-radius:11px;font-size:20px;display:flex;align-items:center;justify-content:center}
+.cell.g{background:linear-gradient(145deg,#065f46,#064e3b);border-color:#34d399}.cell.b{background:#7f1d1d;border-color:#ef4444}
+.card{background:rgba(15,23,42,.85);border:1px solid rgba(56,189,248,.2);border-radius:16px;padding:14px;margin:10px 14px 0}
+.rwrap{position:relative;width:100%;height:78px;background:#070b14;border:2px solid #34d399;border-radius:12px;overflow:hidden;margin:8px 0}
+.rpin{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#facc15;z-index:5}
+.rstrip{display:flex;height:100%;align-items:center}
+.ritem{min-width:74px;height:66px;margin:0 3px;background:#1e293b;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:12px;border-bottom:3px solid #38bdf8}
+.ritem.rare{border-bottom-color:#c084fc;background:#2e1065}.ritem.gold{border-bottom-color:#facc15;background:#422006;color:#facc15}
+.nav{display:flex;background:rgba(15,23,42,.95);border-top:1px solid rgba(56,189,248,.18);padding:6px 0 calc(6px + env(safe-area-inset-bottom));flex-shrink:0}
+.ni{flex:1;text-align:center;font-size:11px;font-weight:700;color:#64748b}.ni.on{color:#34d399}.ni div{font-size:18px;margin-bottom:2px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:30;justify-content:center;align-items:flex-end}
+.mbody{background:#0f172a;width:100%;padding:18px;border-radius:20px 20px 0 0;border-top:1px solid #38bdf8}
+.pay-tabs{display:flex;gap:6px;margin-bottom:12px}
+.ptab{flex:1;text-align:center;padding:8px;background:#1e293b;border:1px solid #334155;border-radius:10px;font-size:12px;font-weight:800;color:#94a3b8}
+.ptab.on{background:#10b981;color:#fff;border-color:#34d399}
+.badge-p{background:#10b981;color:#fff;font-size:11px;padding:2px 6px;border-radius:6px}
+</style>
+</head>
+<body>
+<div class="top">...</div>
+<div class="live-bar">...</div>
+<div class="page on" id="p-lobby">...</div>
+<div class="page" id="p-crash">...</div>
+<div class="page" id="p-mines">
+  <div class="back-bar"><button class="back-btn" onclick="backLobby()">← В лобби</button><b>💎 Кристаллы</b><span style="color:#34d399;font-weight:800" id="mwin">0.00 ⭐</span></div>
+  <div class="mgrid" id="mgrid"></div>
+  <div class="box"><div class="row"><input class="inp" type="number" id="mbet" value="5"><button class="qb" onclick="setMin('mbet',5)">MIN 5</button><button class="qb" onclick="xBet('mbet',2)">2x</button><button class="qb" onclick="maxBet('mbet',5)">MAX</button></div><button class="btn" id="mbtn" onclick="clickMines()">ИГРАТЬ (от 5 ⭐)</button></div>
+</div>
+<div class="page" id="p-dice">
+  <div class="back-bar"><button class="back-btn" onclick="backLobby()">← В лобби</button><b>🎲 Куб Удачи (x1.92)</b></div>
+  <div class="card" style="text-align:center;margin-top:18px"><div style="font-size:13px;color:#94a3b8">Выпавшее число (от 1 до 100)</div><div id="diceNum" style="font-size:56px;font-weight:900;color:#34d399;margin:10px 0">50</div><div id="diceRes" style="font-size:14px;font-weight:700;min-height:20px"></div></div>
+  <div class="box" style="margin-top:auto"><div class="row"><input class="inp" type="number" id="dbet" value="10"><button class="qb" onclick="setMin('dbet',10)">MIN 10</button><button class="qb" onclick="xBet('dbet',2)">2x</button></div><div class="row" style="margin-bottom:0"><button class="btn" onclick="playDice('low')">МЕНЬШЕ 48 (x1.92)</button><button class="btn win" onclick="playDice('high')">БОЛЬШЕ 52 (x1.92)</button></div></div>
+</div>
+<div class="page" id="p-cases">
+  <div class="card" style="padding:10px 12px"><div style="font-size:12px;color:#cbd5e1;text-align:center" id="caseRes">Крути ежедневный бокс или открывай кибер-кейсы!</div><div class="rwrap"><div class="rpin"></div><div class="rstrip" id="rStrip"></div></div></div>
+  <div class="lobby" style="padding-top:8px">
+    <div class="gcard g4" style="height:128px" onclick="spinDaily()"><div class="online">1 раз в день</div><div style="font-size:32px;align-self:center">🎁</div><div class="gtitle" style="font-size:14px">Ежедневный • 1–15 ⭐ / NFT</div></div>
+    <div class="gcard g1" style="height:128px" onclick="spinCase(50,'start')"><div class="online">Дроп: 1–100 ⭐</div><div style="font-size:32px;align-self:center">📦</div><div class="gtitle" style="font-size:14px">Бокс Старт • 50 ⭐</div></div>
+    <div class="gcard g2" style="height:128px" onclick="spinCase(150,'neon')"><div class="online">Дроп: 5–500 ⭐</div><div style="font-size:32px;align-self:center">💎</div><div class="gtitle" style="font-size:14px">Бокс Неон • 150 ⭐</div></div>
+    <div class="gcard g3" style="height:128px" onclick="spinCase(500,'galaxy')"><div class="online">Дроп: 20–1500 ⭐</div><div style="font-size:32px;align-self:center">🌌</div><div class="gtitle" style="font-size:14px">Галактика • 500 ⭐</div></div>
+  </div>
+</div>
+<div class="page" id="p-bonus">
+  <div class="lobby" style="padding-bottom:0">
+    <div class="card" style="margin:0"><div style="font-size:12px;color:#94a3b8">Рейкбек <span class="badge-p">0.5%</span></div><div style="font-size:22px;font-weight:900;margin:6px 0" id="rbVal">0.00 ⭐</div><button class="btn" style="padding:8px;font-size:12px" onclick="claimRb()">Забрать</button></div>
+    <div class="card" style="margin:0"><div style="font-size:12px;color:#94a3b8">Друзья <span class="badge-p">10%</span></div><div style="font-size:22px;font-weight:900;margin:6px 0">0 ⭐</div><button class="btn" style="padding:8px;font-size:12px" onclick="alert('Реф. ссылка: t.me/zetup_game_bot?start=ref')">Пригласить</button></div>
+  </div>
+  <div class="card"><h4 style="margin-bottom:6px">🎟 Промокод (введи ZETUP)</h4><div class="row" style="margin-bottom:0"><input class="inp" id="pcode" placeholder="Промокод..."><button class="qb" style="background:#10b981" onclick="usePromo()">ОК</button></div></div>
+</div>
+<div class="page" id="p-prof">
+  <div class="card"><h3 id="uname" style="margin-bottom:4px">👤 Игрок ZetUP</h3><p style="font-size:13px;color:#94a3b8;margin-bottom:12px">Баланс: <b style="color:#fff" id="pbal">0.00 ⭐</b></p><div class="row" style="margin-bottom:0"><button class="btn" onclick="openM('depM')">ПОПОЛНИТЬ</button><button class="btn win" onclick="openM('outM')">ВЫВЕСТИ</button></div></div>
+  <div class="card"><h4 style="margin-bottom:6px">ℹ️ Условия вывода</h4><p style="font-size:13px;color:#94a3b8;line-height:1.4">1. Пополнить баланс минимум на <b style="color:#34d399">500 ⭐</b>.<br>2. Минимальная сумма вывода: <b style="color:#facc15">1500 ⭐</b>.</p></div>
+</div>
+<div class="nav"><div class="ni on" id="nLobby" onclick="goTab('lobby',this)"><div>🎮</div>Игры</div><div class="ni" id="nCase" onclick="goTab('cases',this)"><div>📦</div>Кейсы</div><div class="ni" id="nBon" onclick="goTab('bonus',this)"><div>🎁</div>Бонусы</div><div class="ni" id="nProf" onclick="goTab('prof',this)"><div>👤</div>Профиль</div></div>
+<div class="modal" id="depM"><div class="mbody"><div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:10px"><span>Пополнить баланс (+5% бонус)</span><span onclick="closeM('depM')">✕</span></div><div class="pay-tabs"><div class="ptab on" id="ptStars" onclick="setPayMode('stars')">⭐ Stars (от 10)</div><div class="ptab" id="ptSbp" onclick="setPayMode('sbp')">💳 СБП (от 300₽)</div><div class="ptab" id="ptTon" onclick="setPayMode('ton')">💎 TON (от 0.5)</div></div><div style="font-size:12px;color:#94a3b8;margin-bottom:6px" id="payHint">Введите количество звёзд (минимум 10 ⭐):</div><div class="row"><input class="inp" type="number" id="payInput" value="100" oninput="calcPay()"></div><div style="font-size:13px;font-weight:800;color:#34d399;margin-bottom:10px" id="payResult">Вы получите: 105 ⭐ (с бонусом +5%)</div><button class="btn" onclick="submitDeposit()">ПЕРЕЙТИ К ОПЛАТЕ</button></div></div>
+<div class="modal" id="outM"><div class="mbody"><div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:8px"><span>Вывод средств (от 1500 ⭐)</span><span onclick="closeM('outM')">✕</span></div><p style="font-size:12px;color:#94a3b8;margin-bottom:10px">Доступно: <b style="color:#fff" id="obal">0.00 ⭐</b>. Требуется депозит от 500 ⭐.</p><div class="row"><input class="inp" type="number" id="outSum" value="1500"></div><div class="row"><input class="inp" id="outWallet" placeholder="Ваш @username или адрес TON"></div><button class="btn win" onclick="doWithdraw()">ЗАКАЗАТЬ ВЫВОД</button></div></div>
+<div class="modal" id="fairM"><div class="mbody"><div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:8px"><span>🛡️ Гарантии честности ZetUP</span><span onclick="closeM('fairM')">✕</span></div><p style="font-size:13px;color:#cbd5e1;line-height:1.5">Каждый раунд в Орбите X шифруется алгоритмом SHA-256 до старта полёта. Все выплаты в Telegram Stars, TON и по СБП обрабатываются автоматически.</p></div></div>
+<script>
+var tg=window.Telegram&&window.Telegram.WebApp?window.Telegram.WebApp:null;
+if(tg){tg.ready();tg.expand();}
+var bal=0,totalDep=0,rb=0,payMode='stars';
+var u=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user?tg.initDataUnsafe.user:null;
+if(u){document.getElementById('uname').innerText='👤 '+(u.first_name||'Игрок');document.getElementById('ava').innerText=(u.first_name||'Z')[0].toUpperCase();}
+
+function updBal(v){bal=Math.max(0,+v.toFixed(2));document.getElementById('bal').innerText=bal.toFixed(2);document.getElementById('pbal').innerText=bal.toFixed(2)+' ⭐';document.getElementById('obal').innerText=bal.toFixed(2)+' ⭐';}
+function addRb(bet){rb+=bet*0.005;document.getElementById('rbVal').innerText=rb.toFixed(2)+' ⭐';}
+function goTab(id,el){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});document.getElementById('p-'+id).classList.add('on');document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('on');});if(el)el.classList.add('on');}
+function openGame(g){goTab(g,null);}
+function backLobby(){goTab('lobby',document.getElementById('nLobby'));}
+function openM(id){document.getElementById(id).style.display='flex';}
+function closeM(id){document.getElementById(id).style.display='none';}
+function setMin(id,m){document.getElementById(id).value=m||10;}
+function xBet(id,k){var el=document.getElementById(id),m=(id==='mbet'?5:10);el.value=Math.min(bal||m,Math.max(m,Math.floor(+el.value*k)));}
+function maxBet(id,m){document.getElementById(id).value=Math.max(m||10,Math.floor(bal));}
+
+function setPayMode(m){payMode=m;document.querySelectorAll('.ptab').forEach(function(t){t.classList.remove('on');});document.getElementById(m==='stars'?'ptStars':(m==='sbp'?'ptSbp':'ptTon')).classList.add('on');var inp=document.getElementById('payInput'),hint=document.getElementById('payHint');if(m==='stars'){hint.innerText='Введите количество звёзд (минимум 10 ⭐):';inp.value=100;}else if(m==='sbp'){hint.innerText='Введите сумму в рублях (минимум 300 ₽):';inp.value=300;}else{hint.innerText='Введите сумму в TON (минимум 0.5 TON):';inp.value=1;}calcPay();}
+function calcPay(){var v=+document.getElementById('payInput').value||0,stars=0;if(payMode==='stars')stars=v;else if(payMode==='sbp')stars=Math.floor(v*0.5);else stars=Math.floor(v*250);var bonus=Math.floor(stars*0.05);document.getElementById('payResult').innerText='Вы получите: '+(stars+bonus)+' ⭐ (с бонусом +5%)';}
+function submitDeposit(){var v=+document.getElementById('payInput').value||0,stars=0;if(payMode==='stars'){if(v<10)return alert('Минимум 10 ⭐');stars=v;}else if(payMode==='sbp'){if(v<300)return alert('Минимум 300 ₽');stars=Math.floor(v*0.5);}else{if(v<0.5)return alert('Минимум 0.5 TON');stars=Math.floor(v*250);}var total=stars+Math.floor(stars*0.05);updBal(bal+total);totalDep+=total;closeM('depM');alert('✅ Демо-пополнение: +'+total+' ⭐');}
+
+var cState='WAIT',cBet=0,mult=1,target=2,roundBank=0,liveBots=[];
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d'),stars=[],meteors=[];
+for(var i=0;i<35;i++)stars.push({x:Math.random(),y:Math.random(),s:1+Math.random()*2,v:0.004+Math.random()*0.008});
+for(var j=0;j<5;j++)meteors.push({x:Math.random(),y:Math.random(),r:4+Math.random()*6,v:0.006+Math.random()*0.01});
+function drawShip(x,y,dx,dy){ctx.save();ctx.translate(x+dx,y+dy);ctx.fillStyle='#f59e0b';ctx.beginPath();ctx.moveTo(-7,18);ctx.lineTo(0,34+Math.random()*8);ctx.lineTo(7,18);ctx.fill();ctx.fillStyle='#e2e8f0';ctx.beginPath();ctx.moveTo(0,-24);ctx.quadraticCurveTo(16,0,12,18);ctx.lineTo(-12,18);ctx.quadraticCurveTo(-16,0,0,-24);ctx.fill();ctx.fillStyle='#10b981';ctx.beginPath();ctx.arc(0,-3,5,0,Math.PI*2);ctx.fill();ctx.restore();}
+function renderFeed(){var f=document.getElementById('betsFeed');f.innerHTML=(cBet>0?'<div class="b-row"><span>Вы</span><b>'+cBet+' ⭐</b></div>':'')+liveBots.map(function(b){return '<div class="b-row'+(b.cashed?' won':'')+'"><span>'+b.n+' ('+b.b+' ⭐)</span><b>'+(b.cashed?'+'+(b.b*b.out).toFixed(0)+' ⭐ ('+b.out+'x)':'В игре')+'</b></div>';}).join('');}
+function waitRound(){cState='WAIT';mult=1;roundBank=0;var mEl=document.getElementById('mult'),bEl=document.getElementById('cbtn');mEl.style.color='#fff';mEl.innerText='1.00x';bEl.disabled=false;bEl.classList.remove('win');bEl.innerText='ПОСТАВИТЬ (от 10 ⭐)';document.getElementById('rHash').innerText='SHA256: '+Math.random().toString(16).slice(2,8)+'...'+Math.random().toString(16).slice(2,6);var names=['@max_pro','@kate_77','@dima_x','@oleg_star','@vika_ton'];liveBots=[];for(var i=0;i<3;i++){var bb=(1+Math.floor(Math.random()*5))*10;roundBank+=bb;liveBots.push({n:names[Math.floor(Math.random()*names.length)],b:bb,out:+(1.3+Math.random()*3.5).toFixed(2),cashed:false});}document.getElementById('roundBank').innerText=roundBank;renderFeed();var sec=5;document.getElementById('st').innerText='Старт через '+sec+' сек...';var tm=setInterval(function(){sec--;if(sec>0)document.getElementById('st').innerText='Старт через '+sec+' сек...';else{clearInterval(tm);flyRound();}},1000);}
+function flyRound(){cState='FLY';var r=Math.random();if(roundBank>1500){target=(r<0.45)?+(1+Math.random()*0.5).toFixed(2):((r>0.985)?+(8+Math.random()*4).toFixed(2):+(1.2+Math.pow(r,2.1)*4.5).toFixed(2));}else if(roundBank>1000){target=(r<0.40)?+(1+Math.random()*0.5).toFixed(2):((r>0.96)?+(10+Math.random()*12).toFixed(2):+(1.15+Math.pow(r,1.6)*6).toFixed(2));}else if(roundBank<500){target=(r<0.04)?1.00:((r>0.94)?+(18+Math.random()*34).toFixed(2):+(1.15+Math.pow(r,1.2)*11).toFixed(2));}else{target=(r<0.08)?1.00:((r>0.95)?+(12+Math.random()*20).toFixed(2):+(1.15+Math.pow(r,1.4)*8).toFixed(2));}document.getElementById('st').innerText='ПОЛЁТ ВВЕРХ!';var bEl=document.getElementById('cbtn');if(cBet>0){bEl.disabled=false;bEl.classList.add('win');}else{bEl.disabled=true;bEl.innerText='ИДЁТ РАУНД...';}var t0=Date.now();function step(){var dt=(Date.now()-t0)/1000;mult=Math.pow(Math.E,0.095*dt);if(mult>=target){mult=target;crashRound();return;}document.getElementById('mult').innerText=mult.toFixed(2)+'x';if(cBet>0)bEl.innerText='ЗАБРАТЬ '+(cBet*mult).toFixed(2)+' ⭐';var changed=false;liveBots.forEach(function(b){if(!b.cashed&&mult>=b.out){b.cashed=true;changed=true;}});if(changed)renderFeed();if(cv.offsetWidth>0){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;ctx.clearRect(0,0,cv.width,cv.height);var spd=1+Math.min(4,dt*0.4);ctx.fillStyle='rgba(255,255,255,0.65)';stars.forEach(function(st){st.y+=st.v*spd;if(st.y>1)st.y=0;ctx.fillRect(st.x*cv.width,st.y*cv.height,st.s,st.s*3);});meteors.forEach(function(m){m.y+=m.v*spd;if(m.y>1.1){m.y=-0.1;m.x=Math.random();}var mx=m.x*cv.width,my=m.y*cv.height;ctx.fillStyle='#64748b';ctx.beginPath();ctx.arc(mx,my,m.r,0,Math.PI*2);ctx.fill();});var ry=Math.max(cv.height*0.48,cv.height-45-dt*18),shk=mult>1.8?Math.min(5,(mult-1.8)*1.5):0;drawShip(cv.width/2,ry,(Math.random()-0.5)*shk,(Math.random()-0.5)*shk);}requestAnimationFrame(step);}step();}
+function crashRound(){cState='END';var mEl=document.getElementById('mult'),bEl=document.getElementById('cbtn');mEl.innerText=mult.toFixed(2)+'x';mEl.style.color='#ef4444';document.getElementById('st').innerText='РАУНД ЗАВЕРШЁН';cBet=0;bEl.classList.remove('win');bEl.disabled=true;bEl.innerText='КРАШ!';var d=document.createElement('div');d.className='tag'+(mult>=15?' gold':'');d.innerText=mult.toFixed(2)+'x';document.getElementById('hist').prepend(d);setTimeout(waitRound,2500);}
+function clickCrash(){if(cState==='WAIT'&&cBet===0){var v=+document.getElementById('cbet').value;if(v<10)return alert('Минимум 10 ⭐');if(v>bal)return alert('Пополните баланс! Минимум 10 ⭐.');updBal(bal-v);addRb(v);cBet=v;roundBank+=v;renderFeed();var bEl=document.getElementById('cbtn');bEl.innerText='СТАВКА: '+cBet+' ⭐';bEl.disabled=true;}else if(cState==='FLY'&&cBet>0){var w=cBet*mult;updBal(bal+w);cBet=0;var bEl=document.getElementById('cbtn');bEl.classList.remove('win');bEl.disabled=true;bEl.innerText='ЗАБРАНО +'+w.toFixed(2)+' ⭐';}}
+
+var mOn=false,mBet=0,mMap=[],mOpen=0,mMult=1;function drawGrid(){var g=document.getElementById('mgrid');g.innerHTML='';for(var i=0;i<25;i++){(function(idx){var c=document.createElement('div');c.className='cell';c.onclick=function(){tapCell(idx,c);};g.appendChild(c);})(i);}}drawGrid();
+function clickMines(){var b=document.getElementById('mbtn');if(!mOn){var v=+document.getElementById('mbet').value;if(v<5)return alert('Минимум 5 ⭐');if(v>bal)return alert('Пополните баланс!');updBal(bal-v);addRb(v);mBet=v;mOn=true;mOpen=0;mMult=1;mMap=[];for(var j=0;j<25;j++)mMap.push('g');var k=0;while(k<3){var r=Math.floor(Math.random()*25);if(mMap[r]!=='b'){mMap[r]='b';k++;}}drawGrid();document.getElementById('mwin').innerText=mBet.toFixed(2)+' ⭐';b.innerText='ВЫБЕРИТЕ КЛЕТКУ';b.classList.add('win');}else if(mOpen>0){updBal(bal+mBet*mMult);stopMines(true);}}
+function tapCell(i,c){if(!mOn||c.classList.contains('g'))return;if(mMap[i]==='b'){c.classList.add('b');c.innerText='💣';stopMines(false);}else{c.classList.add('g');c.innerText='💎';mOpen++;mMult=+(1+mOpen*0.22).toFixed(2);var w=(mBet*mMult).toFixed(2);document.getElementById('mwin').innerText=w+' ⭐';document.getElementById('mbtn').innerText='ЗАБРАТЬ '+w+' ⭐';}}
+function stopMines(win){mOn=false;var cs=document.querySelectorAll('.cell');for(var i=0;i<25;i++){if(mMap[i]==='b'){cs[i].classList.add('b');cs[i].innerText='💣';}}var b=document.getElementById('mbtn');b.classList.remove('win');b.innerText=win?'ВЫИГРЫШ ЗАЧИСЛЕН! ЕЩЁ РАЗ':'ВЗРЫВ! ИГРАТЬ СНОВА';}
+function playDice(dir){var v=+document.getElementById('dbet').value;if(v<10)return alert('Минимум 10 ⭐');if(v>bal)return alert('Пополните баланс!');updBal(bal-v);addRb(v);var n=Math.floor(Math.random()*100)+1;document.getElementById('diceNum').innerText=n;var won=(dir==='low'&&n<48)||(dir==='high'&&n>52);if(won){var w=v*1.92;updBal(bal+w);document.getElementById('diceRes').innerText='🎉 Победа! +'+w.toFixed(2)+' ⭐';}else document.getElementById('diceRes').innerText='❌ Не повезло, выпало '+n;}
+
