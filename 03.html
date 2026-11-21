@@ -227,220 +227,362 @@
    </div>
  </div>
  <script>
- const API="https://185-103-102-204.sslip.io",tg=window.Telegram&&window.Telegram.WebApp;
- if(tg){tg.ready();tg.expand();}
- const u=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)||{id:8990817653,first_name:"Zet",username:"player"};
- document.getElementById("uAva").textContent=(u.first_name||"Z").slice(0,1).toUpperCase();
- document.getElementById("refLink").value="https://t.me"+u.id;
- let bal=0,payMode="stars",roundHash="9f86d081884c7d659a2feaa0c55ad015";
- const rocketImg=new Image();rocketImg.src="Тема.png";
+const API="https:"+"//185-103-102-204.sslip.io",tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.ready();tg.expand();}
+let u=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user;
+if(!u){
+  let gid=localStorage.getItem("zetup_gid");
+  if(!gid){gid=String(Math.floor(100000000+Math.random()*899999999));localStorage.setItem("zetup_gid",gid);}
+  u={id:Number(gid),first_name:"Игрок-"+gid.slice(-4),username:""};
+}
+const UID=Number(u.id),UNAME=u.username?"@"+u.username:(u.first_name||("ID-"+String(UID).slice(-4)));
+if(document.getElementById("uAva"))document.getElementById("uAva").textContent=(UNAME.replace("@","")||"Z").toUpperCase();
+if(document.getElementById("refLink"))document.getElementById("refLink").value="https:"+"//t.me/zetup_game_bot?start="+UID;
 
- async function syncBal(){try{const r=await fetch(API+"/api/balance/"+u.id+"?username="+encodeURIComponent(u.username||""));const d=await r.json();if(typeof d.balance==="number"){bal=d.balance;renderBal();}}catch(e){}}
- async function pingOnline(){try{const r=await fetch(API+"/api/ping",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id})});const d=await r.json();if(typeof d.online==="number")document.getElementById("onlCnt").textContent=d.online;}catch(e){}}
- function renderBal(){document.getElementById("balVal").textContent=bal.toFixed(2);}
- function setBal(v){const nv=+Number(v).toFixed(2),diff=+(nv-bal).toFixed(2);bal=nv;renderBal();if(Math.abs(diff)>=0.01)fetch(API+"/api/game/bet",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id,delta:diff})}).catch(()=>{});}
- function switchTab(t){document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("on"));const el=document.getElementById("tab-"+t),nb=document.getElementById("n-"+t);if(el)el.classList.add("on");if(nb)nb.classList.add("on");}
- function goGame(g){switchTab(g);if(g==="mines"&&!mActive)buildMines();if(g==="upgrade")drawUpg(0);}
- function openM(id){document.getElementById(id).classList.add("open");}
- function closeM(id){document.getElementById(id).classList.remove("open");}
- function adj(id,m){const el=document.getElementById(id);el.value=Math.max(10,Math.floor((+el.value||10)*m));}
- function maxB(id){document.getElementById(id).value=Math.max(10,Math.floor(bal));}
- function copyTxt(id){navigator.clipboard.writeText(document.getElementById(id).value);alert("Скопировано!");}
- function setPM(m){payMode=m;new Array("stars","sbp","ton").forEach(x=>{const b=document.getElementById("pm-"+x);b.style.background=x===m?"#312e81":"#1f263e";b.style.color=x===m?"#fff":"#8e96b0";});document.getElementById("ozonBox").style.display=m==="sbp"?"block":"none";const inp=document.getElementById("payInput"),unit=document.getElementById("payUnit");if(m==="stars"){inp.value=10;unit.textContent="Stars";}if(m==="sbp"){inp.value=300;unit.textContent="₽ (Озон)";}if(m==="ton"){inp.value=0.5;unit.textContent="TON";}calcPay();}
- function calcPay(){const v=+(document.getElementById("payInput").value||0);const st=payMode==="stars"?v:(payMode==="sbp"?v*0.5:v*250);document.getElementById("payHint").textContent="К зачислению: "+(st*1.05).toFixed(1)+" ⭐ (+5% бонус)";}
- async function submitDeposit(){
-   const v=+(document.getElementById("payInput").value||0);
-   if(payMode==="stars"){
-     if(v<10)return alert("Минимум 10 ⭐");
-     try{const r=await fetch(API+"/api/stars/invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id,stars:Math.floor(v)})});const d=await r.json();closeM("depM");if(d.invoice_link&&tg&&tg.openInvoice)tg.openInvoice(d.invoice_link,s=>{if(s==="paid")setTimeout(syncBal,1000);});else if(d.invoice_link)window.location.href=d.invoice_link;else alert("Откройте приложение внутри Telegram-бота @zetup_game_bot!");}catch(e){alert("Ошибка связи с сервером.");}
-     return;
-   }
-   const min=payMode==="sbp"?300:0.5;if(v<min)return alert("Минимум "+min);
-   const st=+((payMode==="sbp"?v*0.5:v*250)*1.05).toFixed(2);
-   try{await fetch(API+"/api/deposit/manual",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id,username:u.username||"",method:payMode.toUpperCase(),amount_raw:v,stars:st})});closeM("depM");alert("Заявка на "+st+" ⭐ создана! Переведите по реквизитам Озон Банка.");}catch(e){alert("Ошибка отправки заявки.");}
- }
- async function submitWithdraw(){const amt=+(document.getElementById("wAmt").value||0),wal=document.getElementById("wWal").value.trim();if(amt<1500||!wal)return alert("Минимум 1500 ⭐ и укажите кошелёк");const r=await fetch(API+"/api/withdraw",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id,username:u.username||"",stars:amt,wallet:wal})});if(r.ok){closeM("withM");syncBal();alert("Заявка на вывод принята!");}else alert("Нужен депозит от 500 ⭐ и баланс от 1500 ⭐");}
- const starsBg=Array.from({length:48},()=>({x:Math.random()*380,y:Math.random()*220,r:Math.random()*2+.4,s:Math.random()*1.8+.5})),sparks=new Array();
- let cPhase="wait",cMult=1,cCrash=2,cBetVal=0,cCashed=false,cHist=new Array(4.67,1.11,5.20,1.00,2.34);
- function renderCHist(){document.getElementById("cHist").innerHTML=cHist.map(x=>'<span class="hpill" style="color:'+(x>=2?'#4ade80':'#94a3b8')+'">'+x.toFixed(2).replace('.',',')+'×</span>').join("");}
- function startCrashLoop(){
-   cPhase="wait";cMult=1;cCashed=false;
-   const btn=document.getElementById("cBtn");btn.className="btn-play";btn.textContent=cBetVal>0?"Ставка "+cBetVal+" ⭐ принята":"Сделать ставку";
-   document.getElementById("cStateTxt").textContent="Взлёт через 4 сек...";
-   setTimeout(()=>{
-     const bank=cBetVal;document.getElementById("cBank").textContent=bank+" ⭐";const r=Math.random();
-     if(bank>=1500&&r>0.995)cCrash=+(10+Math.random()*40).toFixed(2);
-     else if(bank>=200&&r<0.14)cCrash=1.00;
-     else if(bank>=51&&r<0.05)cCrash=1.00;
-     else if(r<0.03)cCrash=1.00;
-     else cCrash=+(1.05+Math.pow(Math.random(),2.4)*(bank<=50?98:68)).toFixed(2);
-     cPhase="fly";document.getElementById("cStateTxt").textContent="Полёт!";
-     if(cBetVal>0){btn.className="btn-play btn-cash";btn.textContent="Забрать "+cBetVal+" ⭐";}
-   },4000);
- }
- function crashAct(){
-   if(cPhase==="wait"){const v=+(document.getElementById("cBet").value||0);if(v<10||v>bal||cBetVal>0)return;cBetVal=v;setBal(bal-v);document.getElementById("cBtn").textContent="Ставка "+v+" ⭐ принята";}
-   else if(cPhase==="fly"&&cBetVal>0&&!cCashed){cCashed=true;const win=+(cBetVal*cMult).toFixed(2);setBal(bal+win);cBetVal=0;document.getElementById("cBtn").className="btn-play";document.getElementById("cBtn").textContent="Забрано +"+win+" ⭐";}
- }
- function drawSpace(){
-   const cv=document.getElementById("cvSpace"),ctx=cv.getContext("2d");
-   const bgGrad=ctx.createRadialGradient(260,60,10,190,110,260);bgGrad.addColorStop(0,"#181c3a");bgGrad.addColorStop(1,"#070a14");
-   ctx.fillStyle=bgGrad;ctx.fillRect(0,0,380,220);
-   starsBg.forEach(s=>{s.x-=s.s*(cPhase==="fly"?3.2:.5);s.y+=s.s*(cPhase==="fly"?1.8:.2);if(s.x<0)s.x=380;if(s.y>220)s.y=0;ctx.fillStyle="rgba(255,255,255,"+(0.4+s.r*0.25)+")";ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.28);ctx.fill();});
-   if(cPhase==="fly"){
-     cMult=+(cMult+0.012*(1+cMult*0.08)).toFixed(2);
-     document.getElementById("cMult").textContent=cMult.toFixed(2).replace('.',',')+"×";
-     if(cBetVal>0&&!cCashed)document.getElementById("cBtn").textContent="Забрать "+(cBetVal*cMult).toFixed(1)+" ⭐";
-     const prog=Math.min(1,(cMult-1)/6),rx=65+prog*215,ry=165-prog*115+Math.sin(Date.now()/90)*3+(cMult>4?Math.sin(Date.now()/25)*3:0);
-     ctx.strokeStyle="rgba(0,245,160,.35)";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(20,205);ctx.quadraticCurveTo(rx*0.5,195,rx,ry);ctx.stroke();
-     sparks.push({x:rx-28,y:ry+18,vx:-3-Math.random()*3,vy:2+Math.random()*2,life:1});
-     for(let i=sparks.length-1;i>=0;i--){const p=sparks[i];p.x+=p.vx;p.y+=p.vy;p.life-=0.07;if(p.life<=0)sparks.splice(i,1);else{ctx.fillStyle="rgba(251,191,36,"+p.life+")";ctx.beginPath();ctx.arc(p.x,p.y,4*p.life,0,6.28);ctx.fill();}}
-     ctx.save();ctx.translate(rx,ry);ctx.rotate(-0.32+Math.sin(Date.now()/120)*0.04);ctx.shadowColor="#00f5a0";ctx.shadowBlur=18;
-     if(rocketImg.complete&&rocketImg.naturalWidth>0)ctx.drawImage(rocketImg,-48,-48,96,96);
-     else{ctx.font="42px serif";ctx.fillText("🚀",-20,15);}
-     ctx.restore();
-     if(cMult>=cCrash){cPhase="boom";cHist.unshift(cCrash);cHist=cHist.slice(0,10);renderCHist();cBetVal=0;document.getElementById("cMult").style.color="#ef4444";document.getElementById("cStateTxt").textContent="Улетел!";setTimeout(()=>{document.getElementById("cMult").style.color="#fff";startCrashLoop();},2500);}
-   }
-   requestAnimationFrame(drawSpace);
- }
+let bal=0,totalDep=0,payMode="stars",syncing=false;
+const rocketImg=new Image();rocketImg.src="Тема.png";
+const crocImg=new Image();crocImg.src=encodeURI("Croco .png");
 
- let rActive=false,rStep=0,rDiff=1,rBetVal=0;
- const boats=new Array({lane:0,y:10,sp:3.2,col:"#f97316"},{lane:1,y:140,sp:4.3,col:"#ef4444"},{lane:2,y:75,sp:3.8,col:"#eab308"});
- function rMult(d,s){return +(1+(s+1)*(0.14+d*0.09)).toFixed(2);}
- function setRDiff(d,el){if(rActive)return;rDiff=d;document.querySelectorAll("#rDiffs button").forEach(b=>{b.style.background="#1f263e";b.style.color="#8e96b0";});el.style.background="#312e81";el.style.color="#fff";}
- function roadAct(){
-   if(!rActive){const v=+(document.getElementById("rBet").value||0);if(v<10||v>bal)return;rBetVal=v;setBal(bal-v);rActive=true;rStep=0;document.getElementById("rBtn").textContent="Прыгнуть на круг";document.getElementById("rCashBtn").style.display="block";}
-   else stepRoad();
- }
- function stepRoad(){
-   if(!rActive)return;
-   const hit=boats.find(c=>c.lane===rStep&&c.y>75&&c.y<175);
-   if(hit||Math.random()<(0.15+rDiff*0.08)){rActive=false;document.getElementById("rBtn").textContent="Сбил катер! Заново";document.getElementById("rCashBtn").style.display="none";return;}
-   rStep++;document.getElementById("rCashBtn").textContent="Забрать "+(rBetVal*rMult(rDiff,rStep-1)).toFixed(2)+" ⭐";
-   if(rStep>=5)roadCash();
- }
- function roadCash(){if(!rActive||rStep===0)return;setBal(bal+(rBetVal*rMult(rDiff,rStep-1)));rActive=false;document.getElementById("rBtn").textContent="Начать игру";document.getElementById("rCashBtn").style.display="none";}
- 
- document.getElementById("cvRoad").onclick=()=>{if(rActive)stepRoad();};
- let mCnt=3,mActive=false,mBombs=new Array(),mOpen=0,mBetVal=0;
- function chgMines(d){if(!mActive){mCnt=Math.min(20,Math.max(2,mCnt+d));document.getElementById("mCnt").textContent=mCnt;}}
- function buildMines(){const g=document.getElementById("mGrid");g.innerHTML="";for(let i=0;i<25;i++){const c=document.createElement("div");c.style.cssText="aspect-ratio:1;background:#1a2036;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;border:1px solid rgba(255,255,255,.06)";c.onclick=()=>tapMine(i,c);g.appendChild(c);}}
- function minesAct(){
-   if(!mActive){const v=+(document.getElementById("mBet").value||0);if(v<10||v>bal)return;mBetVal=v;setBal(bal-v);mActive=true;mOpen=0;mBombs=new Array();while(mBombs.length<mCnt){const r=Math.floor(Math.random()*25);if(!mBombs.includes(r))mBombs.push(r);}buildMines();document.getElementById("mBtn").className="btn-play btn-cash";document.getElementById("mBtn").textContent="Забрать "+v+" ⭐";}
-   else if(mOpen>0){setBal(bal+mBetVal*(1+mOpen*(0.12+mCnt*0.04)));mActive=false;document.getElementById("mBtn").className="btn-play";document.getElementById("mBtn").textContent="Начать игру";}
- }
- function tapMine(i,el){
-   if(!mActive||el.dataset.o)return;el.dataset.o="1";
-   if(mBombs.includes(i)){el.style.background="rgba(239,68,68,.25)";el.textContent="🐊";mActive=false;document.getElementById("mBtn").className="btn-play";document.getElementById("mBtn").textContent="Попался крокодилу!";return;}
-   mOpen++;el.style.background="rgba(0,245,160,.2)";el.textContent="💎";const mult=+(1+mOpen*(0.12+mCnt*0.04)).toFixed(2);
-   document.getElementById("mMultInfo").textContent="Множитель: ×"+mult.toFixed(2).replace('.',',');document.getElementById("mBtn").textContent="Забрать "+(mBetVal*mult).toFixed(1)+" ⭐";
- }
- function drawCroco(ctx,x,y){
-   ctx.save();ctx.translate(x,y);
-   ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(0,18,16,6,0,0,6.28);ctx.fill();
-   ctx.fillStyle="#15803d";ctx.beginPath();ctx.roundRect(-13,-2,26,20,9);ctx.fill();
-   ctx.fillStyle="#22c55e";ctx.beginPath();ctx.ellipse(2,-11,15,11,0,0,6.28);ctx.fill();
-   ctx.fillStyle="#4ade80";ctx.beginPath();ctx.ellipse(12,-9,9,6,0,0,6.28);ctx.fill();
-   ctx.fillStyle="#0f172a";ctx.beginPath();ctx.roundRect(-4,-17,22,7,3);ctx.fill();
-   ctx.fillStyle="#38bdf8";ctx.fillRect(-1,-15,7,4);ctx.fillRect(9,-15,7,4);
-   ctx.fillStyle="#fff";ctx.fillRect(10,-4,3,3);ctx.fillRect(15,-4,3,3);
-   ctx.restore();
- }
- function drawBoat(ctx,x,y,col){
-   ctx.save();ctx.translate(x+20,y+30);
-   const wake=ctx.createLinearGradient(0,-48,0,-25);wake.addColorStop(0,"rgba(255,255,255,0)");wake.addColorStop(1,"rgba(255,255,255,.6)");
-   ctx.fillStyle=wake;ctx.beginPath();ctx.moveTo(0,-24);ctx.lineTo(-16,-48);ctx.lineTo(16,-48);ctx.fill();
-   ctx.fillStyle="rgba(0,0,0,.24)";ctx.beginPath();ctx.ellipse(3,4,17,30,0,0,6.28);ctx.fill();
-   ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(0,32);ctx.quadraticCurveTo(18,14,15,-26);ctx.lineTo(-15,-26);ctx.quadraticCurveTo(-18,14,0,32);ctx.fill();
-   ctx.fillStyle="rgba(255,255,255,.3)";ctx.beginPath();ctx.moveTo(0,26);ctx.lineTo(7,-22);ctx.lineTo(-7,-22);ctx.fill();
-   ctx.fillStyle="#0f172a";ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(10,-4);ctx.lineTo(-10,-4);ctx.fill();
-   ctx.restore();
- }
- function drawRoad(){
-   const cv=document.getElementById("cvRoad"),ctx=cv.getContext("2d");
-   const sand=ctx.createLinearGradient(0,0,86,0);sand.addColorStop(0,"#f59e0b");sand.addColorStop(.85,"#fde68a");sand.addColorStop(1,"#fef3c7");
-   ctx.fillStyle=sand;ctx.fillRect(0,0,86,250);
-   ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(82,0,6,250);
-   const sea=ctx.createLinearGradient(88,0,380,0);sea.addColorStop(0,"#06b6d4");sea.addColorStop(.5,"#0284c7");sea.addColorStop(1,"#0369a1");
-   ctx.fillStyle=sea;ctx.fillRect(88,0,292,250);
-   ctx.strokeStyle="rgba(255,255,255,.18)";ctx.lineWidth=2;
-   for(let w=0;w<6;w++){const wy=((Date.now()/28+w*44)%250);ctx.beginPath();ctx.moveTo(95,wy);ctx.quadraticCurveTo(230,wy-6,372,wy);ctx.stroke();}
-   ctx.setLineDash(new Array(8,8));ctx.strokeStyle="rgba(255,255,255,.45)";ctx.lineWidth=2;
-   new Array(180,275).forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,250);ctx.stroke();});ctx.setLineDash(new Array());
-   for(let i=0;i<3;i++){
-     const lx=132+i*95,m=rMult(rDiff,Math.min(4,Math.max(0,rStep>2?rStep-2+i:i)));
-     ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.arc(lx+2,128,26,0,6.28);ctx.fill();
-     ctx.fillStyle="#15803d";ctx.beginPath();ctx.arc(lx,125,26,0,6.28);ctx.fill();
-     ctx.fillStyle="#bef264";ctx.beginPath();ctx.arc(lx,125,22,0,6.28);ctx.fill();
-     ctx.fillStyle="#ef4444";ctx.beginPath();ctx.arc(lx,125,19,0,6.28);ctx.fill();
-     ctx.fillStyle="#0f172a";for(let k=0;k<6;k++){const a=k*1.04;ctx.beginPath();ctx.arc(lx+Math.cos(a)*14,125+Math.sin(a)*14,1.6,0,6.28);ctx.fill();}
-     ctx.fillStyle="#0284c7";ctx.beginPath();ctx.arc(lx,125,8,0,6.28);ctx.fill();
-     ctx.fillStyle="rgba(15,23,42,.75)";ctx.beginPath();ctx.roundRect(lx-24,154,48,18,6);ctx.fill();
-     ctx.fillStyle="#fde047";ctx.font="900 11px sans-serif";ctx.textAlign="center";ctx.fillText("×"+m.toFixed(2).replace('.',','),lx,167);
-   }
-   boats.forEach(c=>{c.y+=c.sp*(1+rDiff*0.42);if(c.y>275)c.y=-65;drawBoat(ctx,112+c.lane*95,c.y,c.col);});
-   drawCroco(ctx,rStep===0?42:132+Math.min(2,rStep-1)*95,122);
-   requestAnimationFrame(drawRoad);
- }
+function renderBal(){
+  if(document.getElementById("balVal"))document.getElementById("balVal").textContent=bal.toFixed(2);
+  if(document.getElementById("pBal"))document.getElementById("pBal").textContent=bal.toFixed(2);
+  if(document.getElementById("pDep"))document.getElementById("pDep").textContent=totalDep.toFixed(2);
+}
+function setBal(v,td){bal=+Number(v||0).toFixed(2);if(td!==undefined)totalDep=+Number(td||0).toFixed(2);renderBal();}
 
- let uMult=2,uSpin=false;
- function setUMult(m,el){if(uSpin)return;uMult=m;document.querySelectorAll("#uMults button").forEach(b=>{b.style.background="#1f263e";b.style.color="#8e96b0";});el.style.background="#312e81";el.style.color="#fff";updUpg();drawUpg(0);}
- function updUpg(){const v=+(document.getElementById("uBet").value||10);document.getElementById("upgChance").textContent="Шанс: "+Math.floor(95/uMult)+"%";document.getElementById("uBtn").textContent="Крутить Апгрейд (Выигрыш "+(v*uMult)+" ⭐)";}
- function drawUpg(ang){
-   const cv=document.getElementById("cvUpg"),ctx=cv.getContext("2d");ctx.clearRect(0,0,220,220);const winArc=(0.95/uMult)*6.28;
-   ctx.lineWidth=18;ctx.strokeStyle="#1f263e";ctx.beginPath();ctx.arc(110,110,85,0,6.28);ctx.stroke();
-   ctx.strokeStyle="#00f5a0";ctx.beginPath();ctx.arc(110,110,85,-1.57,-1.57+winArc);ctx.stroke();
-   ctx.save();ctx.translate(110,110);ctx.rotate(ang);ctx.fillStyle="#fbbf24";ctx.beginPath();ctx.moveTo(0,-72);ctx.lineTo(-7,-52);ctx.lineTo(7,-52);ctx.fill();ctx.restore();
-   ctx.fillStyle="#fff";ctx.font="900 22px sans-serif";ctx.textAlign="center";ctx.fillText("×"+uMult,110,118);
- }
- function spinUpgrade(){
-   if(uSpin)return;const v=+(document.getElementById("uBet").value||0);if(v<10||v>bal)return;setBal(bal-v);uSpin=true;
-   const won=Math.random()<(0.95/uMult),winArc=(0.95/uMult)*6.28,target=12.56+(won?Math.random()*winArc:winArc+Math.random()*(6.28-winArc));
-   let cur=0;const iv=setInterval(()=>{cur+=(target-cur)*0.12;drawUpg(cur);if(Math.abs(target-cur)<0.02){clearInterval(iv);uSpin=false;if(won){setBal(bal+v*uMult);alert("Апгрейд успешен! +"+(v*uMult)+" ⭐");}else alert("Не повезло в этот раз!");}},20);
- }
+async function apiPost(path,body){
+  const r=await fetch(API+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.detail||"Ошибка");
+  return d;
+}
 
- const nftList=new Array(
-   {n:"Jelly Bunny",img:"IMG_3825.jpeg"},
-   {n:"B-Day Calendar",img:"IMG_3826.jpeg"},
-   {n:"Witchy Heels",img:"IMG_3827.jpeg"},
-   {n:"Signet Ring",img:"IMG_3828.jpeg"},
-   {n:"Astral Ring",img:"IMG_3829.jpeg"}
- );
-  function previewCase(type){
-   const box=document.getElementById("casePreview"),grid=document.getElementById("cpGrid"),btn=document.getElementById("cpOpenBtn");
-   box.style.display="block";
-   if(type==="daily"){
-     document.getElementById("cpTitle").textContent="🎁 Подарок дня";
-     grid.innerHTML='<div class="r-item"><div style="font-size:24px">⭐</div><div style="margin-top:4px;color:#00f5a0">1 ⭐</div></div><div class="r-item"><div style="font-size:24px">⭐</div><div style="margin-top:4px;color:#00f5a0">3 ⭐</div></div><div class="r-item"><div style="font-size:24px">🌟</div><div style="margin-top:4px;color:#facc15">15 ⭐</div></div>';
-     btn.textContent="Открыть бесплатно";btn.onclick=()=>spinCase("daily",0);
-   }else{
-     document.getElementById("cpTitle").textContent="🐊 Содержимое Кибер-Кроко NFT";
-     let h=nftList.map(x=>'<div class="r-item" style="height:105px"><img src="'+x.img+'" style="width:52px;height:52px;border-radius:10px;object-fit:cover"><div style="margin-top:4px;color:#a5b4fc;font-size:10px">'+x.n+'</div></div>').join("");
-     h+=new Array(5,10,25,45,70).map(s=>'<div class="r-item" style="height:105px"><div style="font-size:26px">⭐</div><div style="margin-top:4px;color:#00f5a0">'+s+' ⭐</div></div>').join("");
-     grid.innerHTML=h;btn.textContent="Открыть за 49 ⭐";btn.onclick=()=>spinCase("nft",49);
-   }
- }
- function spinCase(type,cost){
-   if(type==="daily"){const last=+(localStorage.getItem("z_daily")||0);if(Date.now()-last<86400000)return alert("Бесплатный подарок раз в 24 часа!");localStorage.setItem("z_daily",Date.now());}
-   else{if(bal<cost)return alert("Недостаточно звёзд!");setBal(bal-cost);}
-   const r=Math.random(),prize=type==="daily"?(r<0.95?{n:"1 ⭐",v:1}:(r<0.99?{n:"3 ⭐",v:3}:{n:"15 ⭐",v:15})):(r<0.35?{n:"5 ⭐",v:5}:(r<0.85?{n:"10 ⭐",v:10}:(r<0.93?{n:"25 ⭐",v:25}:(r<0.98?{n:"45 ⭐",v:45}:{n:"70 ⭐",v:70}))));
-   const tr=document.getElementById("rTrack");tr.style.transition="none";tr.style.transform="translateX(0px)";
-   const starsPool=new Array("5 ⭐","10 ⭐","25 ⭐","45 ⭐","70 ⭐");
-   let html="";for(let i=0;i<30;i++){
-     if(i===24)html+='<div class="r-item"><div style="font-size:26px">⭐</div><div style="margin-top:4px;color:#00f5a0">'+prize.n+'</div></div>';
-     else if(type==="nft"&&i%2===0){const nf=nftList[i%5];html+='<div class="r-item"><img src="'+nf.img+'" style="width:46px;height:46px;border-radius:8px;object-fit:cover"><div style="margin-top:3px;font-size:10px">'+nf.n+'</div></div>';}
-     else{const st=type==="daily"?(i%2===0?"1 ⭐":"3 ⭐"):starsPool[i%5];html+='<div class="r-item"><div style="font-size:24px">⭐</div><div style="margin-top:4px;color:#00f5a0">'+st+'</div></div>';}
-   }
-   tr.innerHTML=html;document.getElementById("caseResBox").style.display="none";openM("caseM");
-   setTimeout(()=>{tr.style.transition="transform 4s cubic-bezier(.1,.85,.2,1)";tr.style.transform="translateX(-2090px)";},50);
-   setTimeout(()=>{
-     document.getElementById("caseResBox").style.display="block";document.getElementById("caseWinTxt").textContent="Выпало: "+prize.n;
-     document.getElementById("btnSellPrize").textContent="Забрать "+prize.v+" ⭐";document.getElementById("btnSellPrize").onclick=()=>{setBal(bal+prize.v);closeM("caseM");};
-   },4150);
- }
+let crashSrv={round_id:0,phase:"waiting",mult:1.00,remaining:8,history:[],bets:[]};
+async function syncState(){
+  if(syncing)return;syncing=true;
+  try{
+    const d=await apiPost("/api/state",{user_id:UID,username:UNAME});
+    setBal(d.balance,d.total_deposited);
+    const onEl=document.getElementById("onCnt")||document.getElementById("onlineCnt");
+    if(onEl)onEl.textContent=d.online||1;
+    if(d.crash){crashSrv=d.crash;if(typeof applyCrashState==="function")applyCrashState();}
+  }catch(e){}finally{syncing=false;}
+}
+setInterval(syncState,350);syncState();
 
+function switchTab(t){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  const pg=document.getElementById("p-"+t)||document.getElementById("page-"+t);
+  if(pg)pg.classList.add("active");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+  const nb=document.getElementById("n-"+t);if(nb)nb.classList.add("active");
+}
+function goGame(g){switchTab(g);if(g==="mines"&&typeof initMines==="function")initMines();}
+function openM(id){const el=document.getElementById(id);if(el)el.classList.add("open");}
+function closeM(id){const el=document.getElementById(id);if(el)el.classList.remove("open");}
+function adj(id,m){const el=document.getElementById(id);if(el)el.value=Math.max(1,Math.round((+el.value||1)*m));}
+function maxB(id){const el=document.getElementById(id);if(el)el.value=Math.max(1,Math.floor(bal));}
+function copyTxt(id){const el=document.getElementById(id);if(el)navigator.clipboard.writeText(el.value||el.textContent);}
+function setPM(m){
+  payMode=m;
+  Array("stars","sbp","ton").forEach(k=>{const b=document.getElementById("pm-"+k);if(b)b.classList.toggle("active",k===m);});
+  if(document.getElementById("ozonBox"))document.getElementById("ozonBox").style.display=m==="sbp"?"block":"none";
+  calcPay();
+}
+function calcPay(){
+  const v=+(document.getElementById("payInput")?.value||0);
+  const st=+((payMode==="stars"?v:(payMode==="sbp"?v*0.5:v*250))*1.05).toFixed(2);
+  if(document.getElementById("payHint"))document.getElementById("payHint").textContent="К зачислению: "+st+" ⭐ (с бонусом +5%)";
+}
+async function submitDeposit(){
+  const v=+(document.getElementById("payInput")?.value||0);
+  if(payMode==="stars"){
+    if(v<1)return alert("Минимум 1 ⭐");
+    try{
+      const d=await apiPost("/api/stars/invoice",{user_id:UID,stars:Math.floor(v)});
+      if(tg&&tg.openInvoice){
+        tg.openInvoice(d.invoice_link,async st=>{
+          if(st==="paid"){closeM("depM");await syncState();setTimeout(syncState,500);}
+        });
+      }else window.open(d.invoice_link,"_blank");
+    }catch(e){alert(e.message);}
+    return;
+  }
+  const min=payMode==="sbp"?300:0.5;
+  if(v<min)return alert("Минимум: "+min);
+  const st=+((payMode==="sbp"?v*0.5:v*250)*1.05).toFixed(2);
+  try{await fetch(API+"/api/deposit/manual",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:UID,username:UNAME,method:payMode,amount_raw:v,stars_expected:st})});closeM("depM");alert("Заявка отправлена!");}catch(e){}
+}
+async function submitWithdraw(){
+  const amt=+(document.getElementById("wAmt")?.value||0);
+  const wal=(document.getElementById("wWal")?.value||"").trim();
+  if(amt<1500||!wal)return alert("Минимум 1500 ⭐ и укажите кошелёк");
+  try{
+    const d=await apiPost("/api/withdraw",{user_id:UID,username:UNAME,stars:amt,wallet:wal});
+    setBal(d.balance);closeM("withM");alert("Заявка на вывод принята!");
+  }catch(e){alert("Нужно депозитов от 500 ⭐ и баланс от 1500 ⭐");}
+}
+/* === CRASH (ЕДИНЫЙ ПОЛЁТ + ЖИВЫЕ СТАВКИ) === */
+const starsBg=Array.from({length:48},()=>({x:Math.random()*360,y:Math.random()*200,s:Math.random()*1.8+0.6,sp:Math.random()*1.2+0.4}));
+let autoCashDone=-1;
 
- window.onload=()=>{syncBal();pingOnline();setInterval(pingOnline,15000);renderCHist();buildMines();startCrashLoop();drawSpace();drawRoad();drawUpg(0);};
- </script>
- </body>
- </html>
+function applyCrashState(){
+  const ch=document.getElementById("cHist");
+  if(ch)ch.innerHTML=(crashSrv.history||[]).map(x=>`<span class="h-chip ${x>=5?'hi':(x>=2?'mid':'')}">${Number(x).toFixed(2)}x</span>`).join("");
+
+  const btn=document.getElementById("cBtn"),stTxt=document.getElementById("cStateTxt"),mTxt=document.getElementById("cMultTxt");
+  const myBet=(crashSrv.bets||[]).find(b=>Number(b.user_id)===UID);
+
+  if(crashSrv.phase==="waiting"){
+    if(mTxt){mTxt.textContent=Number(crashSrv.remaining).toFixed(1)+"с";mTxt.style.color="#fff";}
+    if(stTxt)stTxt.textContent="ОЖИДАНИЕ СТАВОК (#"+crashSrv.round_id+")";
+    if(btn){
+      if(myBet){btn.className="btn-play";btn.style.opacity="0.6";btn.textContent="СТАВКА ПРИНЯТА ("+myBet.bet+" ⭐)";}
+      else{btn.className="btn-play";btn.style.opacity="1";btn.textContent="ПОСТАВИТЬ";}
+    }
+  }else if(crashSrv.phase==="flying"){
+    const m=Number(crashSrv.mult);
+    if(mTxt){mTxt.textContent=m.toFixed(2)+"x";mTxt.style.color="#34d399";}
+    if(stTxt)stTxt.textContent="В ПОЛЁТЕ";
+    const ax=+(document.getElementById("cAutoInp")?.value||0);
+    if(myBet&&myBet.cash_mult===null&&ax>=1.1&&m>=ax&&autoCashDone!==crashSrv.round_id){
+      autoCashDone=crashSrv.round_id;crashCashOut();
+    }
+    if(btn){
+      if(myBet&&myBet.cash_mult===null){btn.className="btn-play btn-cash";btn.style.opacity="1";btn.textContent="ЗАБРАТЬ "+(myBet.bet*m).toFixed(2)+" ⭐";}
+      else if(myBet&&myBet.cash_mult!==null){btn.className="btn-play";btn.style.opacity="0.6";btn.textContent="ЗАБРАНО "+Number(myBet.cash_mult).toFixed(2)+"x (+"+myBet.win+" ⭐)";}
+      else{btn.className="btn-play";btn.style.opacity="0.5";btn.textContent="ПОЛЁТ ИДЁТ...";}
+    }
+  }else{
+    if(mTxt){mTxt.textContent=Number(crashSrv.mult).toFixed(2)+"x";mTxt.style.color="#ef4444";}
+    if(stTxt)stTxt.textContent="УЛЕТЕЛА!";
+    if(btn){btn.className="btn-play";btn.style.opacity="0.5";btn.textContent="НОВЫЙ РАУНД...";}
+  }
+
+  let listEl=document.getElementById("cBetsList")||document.getElementById("liveBets");
+  if(!listEl&&btn&&btn.parentElement){
+    listEl=document.createElement("div");listEl.id="cBetsList";listEl.style.marginTop="10px";
+    btn.parentElement.appendChild(listEl);
+  }
+  if(listEl){
+    const bets=crashSrv.bets||[];
+    listEl.innerHTML=`<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;display:flex;justify-content:space-between;"><span>Игроки в раунде (${bets.length})</span><span>Ставка / Икс</span></div>`+
+      (bets.length?bets.map(b=>{
+        const me=Number(b.user_id)===UID,won=b.cash_mult!==null;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:10px;margin-bottom:5px;background:${me?'rgba(59,130,246,0.18)':'rgba(255,255,255,0.04)'};border:1px solid ${won?'rgba(16,185,129,0.45)':'rgba(255,255,255,0.06)'};font-size:13px;">
+          <span><b>${b.name}</b>${me?' (Вы)':''} · <b style="color:#fbbf24">${b.bet} ⭐</b></span>
+          <span>${won?`<b style="color:#34d399">${Number(b.cash_mult).toFixed(2)}x (+${b.win} ⭐)</b>`:'<span style="color:#94a3b8;font-size:11px;">В игре</span>'}</span>
+        </div>`;
+      }).join(""):'<div style="text-align:center;color:#64748b;font-size:12px;padding:6px;">Ставок пока нет</div>');
+  }
+}
+
+async function crashAct(){
+  const myBet=(crashSrv.bets||[]).find(b=>Number(b.user_id)===UID);
+  if(crashSrv.phase==="waiting"&&!myBet){
+    const v=+(document.getElementById("cBetInp")?.value||10);
+    if(v<1)return alert("Минимум 1 ⭐");
+    try{const d=await apiPost("/api/crash/bet",{user_id:UID,username:UNAME,bet:v});setBal(d.balance,d.total_deposited);syncState();}catch(e){alert(e.message);}
+  }else if(crashSrv.phase==="flying"&&myBet&&myBet.cash_mult===null){
+    await crashCashOut();
+  }
+}
+async function crashCashOut(){
+  try{const d=await apiPost("/api/crash/cash",{user_id:UID});setBal(d.balance,d.total_deposited);syncState();}catch(e){}
+}
+
+function drawSpace(){
+  const cv=document.getElementById("cvSpace");
+  if(cv){
+    const ctx=cv.getContext("2d"),w=cv.width,h=cv.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle="rgba(255,255,255,0.7)";
+    starsBg.forEach(s=>{
+      if(crashSrv.phase==="flying"){s.x-=s.sp*1.5;s.y+=s.sp*0.7;if(s.x<0)s.x=w;if(s.y>h)s.y=0;}
+      ctx.beginPath();ctx.arc(s.x,s.y,s.s,0,Math.PI*2);ctx.fill();
+    });
+    const m=Number(crashSrv.mult||1);
+    const rx=crashSrv.phase==="waiting"?55:Math.min(w-70,55+(m-1)*55);
+    const ry=crashSrv.phase==="waiting"?h-55:Math.max(55,h-55-(m-1)*32);
+    if(crashSrv.phase==="flying"){
+      ctx.strokeStyle="rgba(139,92,246,0.65)";ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(35,h-35);ctx.quadraticCurveTo(rx*0.5,h-35,rx,ry);ctx.stroke();
+    }
+    ctx.save();ctx.translate(rx,ry);
+    if(crashSrv.phase==="flying")ctx.rotate(-0.35);
+    if(rocketImg.complete&&rocketImg.naturalWidth>0)ctx.drawImage(rocketImg,-34,-34,68,68);
+    else{ctx.font="42px serif";ctx.fillText("🚀",-20,14);}
+    ctx.restore();
+  }
+  requestAnimationFrame(drawSpace);
+}
+drawSpace();
+/* === 3D БЕСКОНЕЧНАЯ ДОРОГА С КРОКОДИЛОМ === */
+let rActive=false,rStep=0,rDiff=1,rBetVal=0,rCrashed=false,rScroll=0,rCrocX=46,rTargetX=46,rLane=-1,rCrashCar=null;
+const rCars=Array({lane:0,y:-60,sp:2.6,col:"#f97316",tr:true},{lane:1,y:-190,sp:3.2,col:"#eab308",tr:false},{lane:2,y:-120,sp:3.8,col:"#3b82f6",tr:false});
+function rMult(d,s){if(s<=0)return 1;const b=d===0?1.22:(d===1?1.42:1.80);return +(Math.pow(b,s).toFixed(2));}
+function setRDiff(d,el){
+  if(rActive)return;rDiff=d;
+  if(el&&el.parentElement)el.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+  if(el)el.classList.add("active");
+}
+async function roadAct(){
+  if(!rActive){
+    const v=+(document.getElementById("rBetInp")?.value||10);
+    if(v<1)return alert("Минимум 1 ⭐");
+    try{
+      const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});
+      setBal(d.balance,d.total_deposited);
+      rActive=true;rCrashed=false;rStep=0;rBetVal=v;rLane=-1;rCrocX=46;rTargetX=46;rCrashCar=null;
+      const cb=document.getElementById("rCashBtn");if(cb)cb.textContent="Забрать "+v.toFixed(2)+" ⭐";
+    }catch(e){alert(e.message);}
+  }else stepRoad();
+}
+function stepRoad(){
+  if(!rActive||rCrashed)return;
+  const ns=rStep+1,nl=(ns-1)%3;
+  rLane=nl;rTargetX=135+nl*74;rScroll+=60;
+  const prob=rDiff===0?0.22:(rDiff===1?0.33:0.48);
+  if(Math.random()<prob){
+    rCrashed=true;rActive=false;
+    rCrashCar={lane:nl,y:-70,sp:14,col:"#f97316",tr:true};
+    setTimeout(()=>{alert("💥 Машина сбила крокодила!");},400);
+  }else{
+    rStep=ns;
+    const cb=document.getElementById("rCashBtn");
+    if(cb)cb.textContent="Забрать "+(rBetVal*rMult(rDiff,rStep)).toFixed(2)+" ⭐ ("+rMult(rDiff,rStep)+"x)";
+  }
+}
+async function roadCash(){
+  if(!rActive||rStep===0||rCrashed)return;
+  const win=+(rBetVal*rMult(rDiff,rStep)).toFixed(2);
+  rActive=false;
+  try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});setBal(d.balance,d.total_deposited);alert("Забрано +"+win+" ⭐!");}catch(e){}
+}
+function drawRoad(){
+  const cv=document.getElementById("cvRoad")||document.querySelector("#p-road canvas");
+  if(cv){
+    const ctx=cv.getContext("2d"),w=cv.width,h=cv.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle="#94a3b8";ctx.fillRect(0,0,86,h);
+    ctx.fillStyle="#64748b";ctx.fillRect(80,0,6,h);
+    for(let py=(rScroll%40)-40;py<h;py+=40){ctx.strokeStyle="#cbd5e1";ctx.strokeRect(2,py,76,40);}
+    ctx.fillStyle="#15803d";ctx.beginPath();ctx.arc(14,55,20,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(46,h-40,18,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#ef4444";ctx.lineWidth=3.5;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(34,h-52);ctx.lineTo(58,h-28);ctx.stroke();
+    ctx.fillStyle="#1e2538";ctx.fillRect(86,0,w-86,h);
+    ctx.strokeStyle="rgba(148,163,184,0.35)";ctx.lineWidth=2.5;ctx.setLineDash([14,14]);ctx.lineDashOffset=-rScroll;
+    Array(172,246).forEach(lx=>{ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,h);ctx.stroke();});
+    ctx.setLineDash([]);
+    for(let l=0;l<3;l++){
+      const mx=135+l*74,my=h*0.56,st=rStep-(rStep%3)+l+1,ok=rActive&&l<(rStep%3);
+      ctx.fillStyle=ok?"#1e293b":"#2d3652";ctx.beginPath();ctx.arc(mx,my,23,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=ok?"#f59e0b":"#475569";ctx.lineWidth=2.5;ctx.stroke();
+      ctx.fillStyle=ok?"#fbbf24":"#94a3b8";ctx.font="bold "+(ok?"18px":"10px")+" sans-serif";ctx.textAlign="center";
+      ctx.fillText(ok?"★":rMult(rDiff,st)+"x",mx,ok?my+6:my+36);
+    }
+    const drawC=c=>{
+      const cx=135+c.lane*74-19,ch=c.tr?68:54;
+      ctx.fillStyle=c.col;ctx.fillRect(cx,c.y,38,ch);
+      ctx.fillStyle="#0f172a";ctx.fillRect(cx+5,c.y+ch-18,28,10);
+      ctx.fillStyle="#fef08a";ctx.fillRect(cx+4,c.y+ch-4,8,3);ctx.fillRect(cx+26,c.y+ch-4,8,3);
+    };
+    rCars.forEach(c=>{
+      if(!rCrashed||c.lane!==rLane){
+        c.y+=c.sp;if(c.y>h+80)c.y=-80;
+        if(rActive&&c.lane===rLane&&Math.abs(c.y-h*0.48)<50)c.y=-80;
+        drawC(c);
+      }
+    });
+    if(rCrashCar){rCrashCar.y+=rCrashCar.sp;drawC(rCrashCar);}
+    rCrocX+=(rTargetX-rCrocX)*0.22;
+    const cy=rCrashed?h*0.58:h*0.46;
+    if(crocImg.complete&&crocImg.naturalWidth>0){
+      ctx.save();if(rCrashed){ctx.translate(rCrocX,cy+22);ctx.rotate(Math.PI/2);ctx.drawImage(crocImg,-26,-26,52,52);}
+      else ctx.drawImage(crocImg,rCrocX-26,cy,52,52);ctx.restore();
+    }else{ctx.font="34px serif";ctx.textAlign="center";ctx.fillText("🐊",rCrocX,cy+32);}
+  }
+  requestAnimationFrame(drawRoad);
+}
+drawRoad();
+
+/* === МИНЕС (ОТ 3 ДО 24 МИН) === */
+let mCnt=3,mActive=false,mBombs=Array(),mOp=0,mBet=0,mMult=1;
+function calcMM(op,cnt){let m=1;for(let k=0;k<op;k++)m*=(25-k)/(25-cnt-k);return +(Math.max(1.01,m*0.96).toFixed(2));}
+function chgMines(d){if(mActive)return;mCnt=Math.min(24,Math.max(3,mCnt+d));if(document.getElementById("mCnt"))document.getElementById("mCnt").textContent=mCnt;}
+function initMines(){
+  const g=document.getElementById("mGrid");if(!g)return;g.innerHTML="";
+  for(let i=0;i<25;i++){const c=document.createElement("div");c.className="m-cell";c.textContent="?";c.onclick=()=>hitMine(i,c);g.appendChild(c);}
+}
+async function minesAct(){
+  if(!mActive){
+    const v=+(document.getElementById("mBetInp")?.value||10);
+    if(v<1)return alert("Минимум 1 ⭐");
+    try{
+      const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});
+      setBal(d.balance,d.total_deposited);mActive=true;mBet=v;mOp=0;mMult=1;mBombs=Array(25).fill(0);
+      let p=0;while(p<mCnt){const idx=Math.floor(Math.random()*25);if(!mBombs[idx]){mBombs[idx]=1;p++;}}
+      initMines();
+      if(document.getElementById("mBtn"))document.getElementById("mBtn").textContent="Забрать "+v.toFixed(2)+" ⭐";
+    }catch(e){alert(e.message);}
+  }else if(mOp>0){
+    const win=+(mBet*mMult).toFixed(2);mActive=false;
+    const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});
+    setBal(d.balance,d.total_deposited);alert("Выигрыш +"+win+" ⭐!");
+    if(document.getElementById("mBtn"))document.getElementById("mBtn").textContent="Играть";
+  }
+}
+function hitMine(i,c){
+  if(!mActive||c.classList.contains("open"))return;
+  if(mBombs[i]===1){c.classList.add("boom");c.textContent="💣";mActive=false;alert("💥 Мина!");if(document.getElementById("mBtn"))document.getElementById("mBtn").textContent="Играть";}
+  else{
+    c.classList.add("open");c.textContent="💎";mOp++;mMult=calcMM(mOp,mCnt);
+    if(document.getElementById("mBtn"))document.getElementById("mBtn").textContent="Забрать "+(mBet*mMult).toFixed(2)+" ⭐ ("+mMult+"x)";
+  }
+}
+
+/* === КЕЙСЫ + РУЛЕТКА STANDOFF + ТАЙМЕР === */
+let cSpinning=false;
+function updDailyBtn(){
+  const b=document.getElementById("dailyBtn")||document.querySelector("[onclick*='daily']");
+  if(!b)return;
+  const last=Number(localStorage.getItem("zetup_daily_"+UID)||0),diff=86400000-(Date.now()-last);
+  if(diff>0){
+    const h=String(Math.floor(diff/3600000)).padStart(2,"0"),m=String(Math.floor((diff%3600000)/60000)).padStart(2,"0"),s=String(Math.floor((diff%60000)/1000)).padStart(2,"0");
+    b.textContent="Через "+h+":"+m+":"+s;b.style.opacity="0.6";
+  }else{b.textContent="Открыть бесплатно";b.style.opacity="1";}
+}
+setInterval(updDailyBtn,1000);updDailyBtn();
+
+async function openCase(type,cost){
+  if(cSpinning)return;
+  if(type==="daily"){
+    if(Date.now()-Number(localStorage.getItem("zetup_daily_"+UID)||0)<86400000)return alert("Ежедневный кейс пока перезаряжается!");
+  }else{
+    try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-cost});setBal(d.balance,d.total_deposited);}catch(e){return alert(e.message);}
+  }
+  cSpinning=true;
+  const pools={daily:Array(1,2,5,10,25,50),start:Array(10,15,25,45,90,150),nft:Array(40,60,90,150,300,600,1000)};
+  const pool=pools[type]||pools.start,r=Math.random();
+  const winVal=r<0.55?pool[Math.floor(Math.random()*3)]:(r<0.88?pool[3+Math.floor(Math.random()*2)]:pool[pool.length-1]);
+  openM("caseM");
+  const tr=document.getElementById("rouletteTrack")||document.querySelector("#caseM .roulette-track");
+  if(document.getElementById("caseResBox"))document.getElementById("caseResBox").style.display="none";
+  if(tr){
+    tr.style.transition="none";tr.style.transform="translateX(0px)";
+    let html="";for(let i=0;i<34;i++){const v=i===28?winVal:pool[Math.floor(Math.random()*pool.length)];html+=`<div class="r-item">⭐ ${v}</div>`;}
+    tr.innerHTML=html;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{tr.style.transition="transform 4s cubic-bezier(0.12,0.82,0.18,1)";tr.style.transform="translateX(-2450px)";}));
+  }
+  setTimeout(async()=>{
+    if(type==="daily"){localStorage.setItem("zetup_daily_"+UID,String(Date.now()));updDailyBtn();}
+    try{const d2=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:winVal});setBal(d2.balance,d2.total_deposited);}catch(e){}
+    if(document.getElementById("caseWinTxt"))document.getElementById("caseWinTxt").textContent="Выпало: "+winVal+" ⭐!";
+    if(document.getElementById("caseResBox"))document.getElementById("caseResBox").style.display="block";
+    cSpinning=false;
+  },4150);
+}
+</script>
+</body>
+</html>
