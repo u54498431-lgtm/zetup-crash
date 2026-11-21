@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>ZetUP</title>
-<script src="https://telegram.org"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#090d16;color:#f8fafc;padding-bottom:84px;overflow-x:hidden}
@@ -716,3 +716,144 @@ function draw25DCar(x,c){
   }
   requestAnimationFrame(loopR);
 })();
+/* === МИНЫ RUBUP (3-24 + ЛЕНТА ИКСОВ) === */
+let mCnt=3,mAct=false,mBet=0,mMap=Array(),mOp=0,mMult=1;
+function calcM(op,cnt){let m=1;for(let k=0;k<op;k++)m*=(25-k)/(25-cnt-k);return +(Math.max(1.01,m*0.96).toFixed(2));}
+function chgM(d){if(mAct)return;mCnt=Math.min(24,Math.max(3,mCnt+d));document.getElementById("mCntTxt").textContent=mCnt;vib();updMRibbon();}
+function updMRibbon(){
+  const b=+(document.getElementById("mBetInp").value||10);let h="";
+  for(let s=mOp+1;s<=Math.min(25-mCnt,mOp+5);s++){const mx=calcM(s,mCnt);h+=`<div class="mr-chip ${s===mOp+1?'cur':''}">×${mx.toFixed(2).replace(".",",")} <span style="color:#fbbf24">${(b*mx).toFixed(0)} ⭐</span></div>`;}
+  document.getElementById("mRibbon").innerHTML=h;
+}
+function initMines(){const g=document.getElementById("mGrid");g.innerHTML="";for(let i=0;i<25;i++){const c=document.createElement("div");c.className="m-cell";c.onclick=()=>hitM(i,c);g.appendChild(c);}updMRibbon();}
+initMines();
+async function minesAct(){
+  if(!mAct){
+    const v=+(document.getElementById("mBetInp").value||10);if(v<1)return showToast("Минимум 1 ⭐");
+    try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});setBal(d.balance,d.total_deposited);addCashback(v);vib();mAct=true;mBet=v;mOp=0;mMult=1;mMap=Array(25).fill(0);let p=0;while(p<mCnt){const idx=Math.floor(Math.random()*25);if(!mMap[idx]){mMap[idx]=1;p++;}}initMines();document.getElementById("mBtn").className="pbtn gold";document.getElementById("mBtn").textContent="Забрать "+v.toFixed(2)+" ⭐";}catch(e){showToast(e.message);}
+  }else if(mOp>0){const win=+(mBet*mMult).toFixed(2);mAct=false;const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});setBal(d.balance,d.total_deposited);vib("ok");showToast("Выигрыш +"+win+" ⭐!");document.getElementById("mBtn").className="pbtn";document.getElementById("mBtn").textContent="Начать игру";}
+}
+function hitM(i,c){if(!mAct||c.classList.contains("open"))return;if(mMap[i]===1){c.classList.add("boom");c.textContent="💣";mAct=false;vib("heavy");showToast("💥 Вы попали на бомбу!");document.getElementById("mBtn").className="pbtn";document.getElementById("mBtn").textContent="Начать игру";}else{c.classList.add("open");c.textContent="💎";mOp++;mMult=calcM(mOp,mCnt);vib();updMRibbon();document.getElementById("mBtn").textContent="Забрать "+(mBet*mMult).toFixed(2)+" ⭐";}}
+
+/* === АПГРЕЙД ПОДАРКОВ (35% БУКЕТ / 15% КОЛЬЦО / 0% РЕАЛЬНЫХ НА NFT) === */
+const UPG_TARGETS={
+  bouquet:{n:"Букет",v:50,img:"IMG_4011.jpeg",visCh:35,realCh:35},
+  ring:{n:"Кольцо",v:100,img:"IMG_4012.jpeg",visCh:15,realCh:15},
+  nft1:{n:"Genesis NFT",v:650,img:"IMG_3829.jpeg",visCh:65,realCh:0},
+  nft2:{n:"Кроко Фунт",v:1000,img:"Без названия30_20261121145255.png",visCh:55,realCh:0}
+};
+let uAng=0,uSpinning=false;
+function updUpgWheel(){
+  const cv=document.getElementById("cvUpg");if(!cv)return;
+  const x=cv.getContext("2d"),t=UPG_TARGETS[document.getElementById("uToSel").value];
+  x.clearRect(0,0,220,220);
+  x.strokeStyle="#1e293b";x.lineWidth=18;x.beginPath();x.arc(110,110,82,0,Math.PI*2);x.stroke();
+  const arc=(t.visCh/100)*Math.PI*2;
+  x.strokeStyle="#10b981";x.lineWidth=18;x.beginPath();x.arc(110,110,82,-Math.PI/2,-Math.PI/2+arc);x.stroke();
+  x.fillStyle="#fff";x.font="900 28px sans-serif";x.textAlign="center";x.fillText(t.visCh+"%",110,118);
+  const px=110+Math.cos(uAng-Math.PI/2)*82,py=110+Math.sin(uAng-Math.PI/2)*82;
+  x.fillStyle="#facc15";x.beginPath();x.arc(px,py,9,0,Math.PI*2);x.fill();
+}
+updUpgWheel();
+function spinUpgrade(){
+  if(uSpinning)return;
+  const idx=document.getElementById("uFromSel").value;
+  if(idx===""||!myGifts[idx])return showToast("Сначала оставьте подарок в профиле!");
+  const t=UPG_TARGETS[document.getElementById("uToSel").value];
+  const won=Math.random()*100<t.realCh;
+  const greenArc=(t.visCh/100)*Math.PI*2;
+  const stopRel=won?(Math.random()*(greenArc*0.7)+greenArc*0.15):(greenArc+0.12+Math.random()*(Math.PI*2-greenArc-0.25));
+  const targetAng=Math.PI*8+stopRel,startAng=uAng,t0=performance.now();
+  uSpinning=true;vib();
+  (function anim(now){
+    const p=Math.min(1,(now-t0)/3000),ease=1-Math.pow(1-p,3);
+    uAng=startAng+(targetAng-startAng)*ease;updUpgWheel();
+    if(p<1)requestAnimationFrame(anim);
+    else{
+      uAng=stopRel;uSpinning=false;myGifts.splice(Number(idx),1);
+      if(won){myGifts.push({n:t.n,v:t.v,img:t.img});vib("ok");showToast("🎉 Успешный апгрейд: "+t.n+"!");}
+      else{vib("heavy");showToast("❌ Апгрейд не удался, подарок сгорел!");}
+      saveGifts();
+    }
+  })(t0);
+}
+
+/* === КЕЙСЫ RUBUP (ТОЧНЫЕ ШАНСЫ + ПРОДАТЬ / ОСТАВИТЬ В ПРОФИЛЕ) === */
+const CASES={
+  daily:{name:"Подарок дня",sub:"Бесплатно раз в 24 часа",cost:0,img:"IMG_3835.jpeg",items:Array(
+    {n:"Подарок #1",v:15,ch:1.5,img:"IMG_4005.jpeg",c:"rc-purp",gift:true},
+    {n:"Подарок #2",v:15,ch:1.5,img:"IMG_4007.jpeg",c:"rc-purp",gift:true},
+    {n:"Букет",v:50,ch:1.5,img:"IMG_4011.jpeg",c:"rc-red",gift:true},
+    {n:"Кольцо",v:100,ch:1.5,img:"IMG_4012.jpeg",c:"rc-red",gift:true},
+    {n:"Подарок #5",v:25,ch:1.5,img:"IMG_4013.jpeg",c:"rc-blue",gift:true},
+    {n:"10 Звёзд",v:10,ch:9,img:"",ico:"⭐",c:"rc-blue",gift:false},
+    {n:"3 Звезды",v:3,ch:38.5,img:"",ico:"⭐",c:"rc-green",gift:false},
+    {n:"1 Звезда",v:1,ch:45,img:"",ico:"✨",c:"rc-green",gift:false}
+  )},
+  nft:{name:"Кибер-Кроко (49 ⭐)",sub:"Редкие NFT и звёзды",cost:49,img:"nft_box.png.PNG",items:Array(
+    {n:"Кроко Фунт NFT",v:1000,ch:0,img:"Без названия30_20261121145255.png",c:"rc-red",gift:true},
+    {n:"Genesis NFT",v:650,ch:0,img:"IMG_3829.jpeg",c:"rc-red",gift:true},
+    {n:"Diamond NFT",v:400,ch:0,img:"IMG_3828.jpeg",c:"rc-purp",gift:true},
+    {n:"Ruby NFT",v:250,ch:0,img:"IMG_3827.jpeg",c:"rc-purp",gift:true},
+    {n:"Gold Bear NFT",v:150,ch:0,img:"IMG_3826.jpeg",c:"rc-blue",gift:true},
+    {n:"Cyber Gem NFT",v:120,ch:0,img:"IMG_3825.jpeg",c:"rc-blue",gift:true},
+    {n:"70 Звёзд",v:70,ch:3,img:"",ico:"💎",c:"rc-purp",gift:false},
+    {n:"40 Звёзд",v:40,ch:7,img:"",ico:"⭐",c:"rc-blue",gift:false},
+    {n:"25 Звёзд",v:25,ch:16,img:"",ico:"⭐",c:"rc-green",gift:false},
+    {n:"10 Звёзд",v:10,ch:39,img:"",ico:"⭐",c:"rc-green",gift:false},
+    {n:"5 Звёзд",v:5,ch:55,img:"",ico:"✨",c:"rc-green",gift:false}
+  )}
+};
+let curCase="daily",cMult=1,cFast=false,cSpin=false;
+function itemMedia(it){return it.img?`<img src="${it.img}" alt=""/>`:`<div style="font-size:28px;margin-bottom:2px;">${it.ico}</div>`;}
+function showItemInfo(idx){const it=CASES[curCase].items[idx];document.getElementById("itImg").src=it.img||CASES[curCase].img;document.getElementById("itName").textContent=it.n;document.getElementById("itVal").textContent=it.v+" ⭐";document.getElementById("itChance").textContent=it.ch+" %";openM("itemM");}
+function toggleFast(){cFast=!cFast;vib();document.getElementById("cFastBtn").className=cFast?"pbtn gold":"pbtn off";}
+function setCaseMult(m,el){if(cSpin||curCase==="daily")return;cMult=m;vib();document.querySelectorAll(".mchip").forEach(b=>b.classList.remove("active"));el.classList.add("active");renderRubCase();}
+function selCase(k){if(cSpin)return;curCase=k;if(k==="daily")cMult=1;vib();document.querySelectorAll(".ctab").forEach(t=>t.classList.remove("active"));document.getElementById("ct-"+k).classList.add("active");renderRubCase();}
+function renderRubCase(){
+  const cs=CASES[curCase];document.getElementById("cCaseName").textContent=cs.name;document.getElementById("cCaseSub").textContent=cs.sub;document.getElementById("cCaseImg").src=cs.img;
+  document.getElementById("cMultBar").style.display=curCase==="daily"?"none":"flex";
+  document.getElementById("cDropGrid").innerHTML=cs.items.map((it,idx)=>`<div class="d-card ${it.c}" onclick="showItemInfo(${idx})">${itemMedia(it)}<div style="font-size:11px;font-weight:800;">${it.n}</div><div style="font-size:12px;font-weight:900;color:#fbbf24;">${it.v} ⭐</div></div>`).join("");
+  const lanes=document.getElementById("rubLanes");lanes.innerHTML="";
+  for(let l=0;l<cMult;l++){
+    let h="";for(let i=0;i<12;i++){const it=cs.items[i%cs.items.length];h+=`<div class="r-card ${it.c}">${itemMedia(it)}<div>${it.v} ⭐</div></div>`;}
+    lanes.innerHTML+=`<div class="r-lane"><div class="r-glow"></div><div class="r-track" id="rTr${l}">${h}</div></div>`;
+  }
+  updCaseBtn();
+}
+function updCaseBtn(){
+  const btn=document.getElementById("cOpenBtn"),cs=CASES[curCase];
+  if(curCase==="daily"){
+    const diff=86400000-(Date.now()-Number(localStorage.getItem("zetup_daily_"+UID)||0));
+    if(diff>0){const h=String(Math.floor(diff/3600000)).padStart(2,"0"),m=String(Math.floor((diff%3600000)/60000)).padStart(2,"0"),s=String(Math.floor((diff%60000)/1000)).padStart(2,"0");btn.className="pbtn off";btn.textContent="Через "+h+":"+m+":"+s;return;}
+    btn.className="pbtn";btn.textContent="Открыть бесплатно";
+  }else{btn.className="pbtn";btn.textContent="Открыть за "+(cs.cost*cMult)+" ⭐";}
+}
+setInterval(updCaseBtn,1000);renderRubCase();
+function pickWeighted(items){const tot=items.reduce((s,i)=>s+i.ch,0);let r=Math.random()*tot;for(const it of items){if(it.ch<=0)continue;if(r<=it.ch)return it;r-=it.ch;}return items[items.length-1];}
+
+async function spinRubCase(){
+  if(cSpin)return;const cs=CASES[curCase];
+  if(curCase==="daily"){if(Date.now()-Number(localStorage.getItem("zetup_daily_"+UID)||0)<86400000)return showToast("Ежедневный кейс перезаряжается!");}
+  else{try{const cost=cs.cost*cMult;const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-cost});setBal(d.balance,d.total_deposited);addCashback(cost);}catch(e){return showToast(e.message);}}
+  cSpin=true;vib();let starsWin=0,wonGift=null;const dur=cFast?700:3800;
+  for(let l=0;l<cMult;l++){
+    const winIt=pickWeighted(cs.items);
+    if(winIt.gift)wonGift=winIt;else starsWin+=winIt.v;
+    const tr=document.getElementById("rTr"+l);let h="";
+    for(let i=0;i<34;i++){const it=i===28?winIt:cs.items[Math.floor(Math.random()*cs.items.length)];h+=`<div class="r-card ${it.c}">${itemMedia(it)}<div>${it.v} ⭐</div></div>`;}
+    tr.style.transition="none";tr.style.transform="translateX(0px)";tr.innerHTML=h;
+    const off=(28*90+45)-((tr.parentElement.offsetWidth||320)/2);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{tr.style.transition=`transform ${dur}ms cubic-bezier(.12,.82,.18,1)`;tr.style.transform=`translateX(-${off}px)`;}));
+  }
+  setTimeout(async()=>{
+    if(curCase==="daily"){localStorage.setItem("zetup_daily_"+UID,String(Date.now()));updCaseBtn();}
+    if(starsWin>0){try{const d2=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:starsWin});setBal(d2.balance,d2.total_deposited);}catch(e){}}
+    vib("ok");cSpin=false;
+    if(wonGift){pendingGift=wonGift;document.getElementById("wgImg").src=wonGift.img;document.getElementById("wgName").textContent=wonGift.n+" ("+wonGift.v+" ⭐)";document.getElementById("wgSellBtn").textContent="Продать за "+wonGift.v+" ⭐";openM("winGiftM");}
+    else showToast("🎉 Выигрыш: +"+starsWin+" ⭐!");
+  },dur+150);
+}
+</script>
+</body>
+</html>
