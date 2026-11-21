@@ -247,32 +247,32 @@ body{background:#0d101b;color:#fff;min-height:100vh;padding-bottom:80px;overflow
     <div class="bet-row"><input type="text" id="wWal" placeholder="Ваш TON-кошелёк или @username"></div>
     <button class="btn-play" onclick="submitWithdraw()">Заказать вывод</button>
   </div>
-</div>
+ </div>
 
-<script>
-const API="https://sslip.io",tg=window.Telegram&&window.Telegram.WebApp;
-if(tg){tg.ready();tg.expand();}
-const u=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)||{id:8990817653,first_name:"Zet",username:"player"};
-document.getElementById("uAva").textContent=(u.first_name||"Z").slice(0,1).toUpperCase();
-document.getElementById("refLink").value="https://t.me?start="+u.id;
-let bal=0,payMode="stars",roundHash="9f86d081884c7d659a2feaa0c55ad015";
-const rocketImg=new Image();rocketImg.src="Тема.png";
+ <script>
+ const API="https://185-103-102-204.sslip.io",tg=window.Telegram&&window.Telegram.WebApp;
+ if(tg){tg.ready();tg.expand();}
+ const u=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)||{id:8990817653,first_name:"Zet",username:"player"};
+ document.getElementById("uAva").textContent=(u.first_name||"Z").slice(0,1).toUpperCase();
+ document.getElementById("refLink").value="https://t.me"+u.id;
+ let bal=0,payMode="stars",roundHash="9f86d081884c7d659a2feaa0c55ad015";
+ const rocketImg=new Image();rocketImg.src="Тема.png";
 
-async function syncBal(){try{const r=await fetch(API+"/api/balance/"+u.id+"?username="+encodeURIComponent(u.username||""));const d=await r.json();if(typeof d.balance==="number"){bal=d.balance;renderBal();}}catch(e){}}
-async function pingOnline(){try{const r=await fetch(API+"/api/ping",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id})});const d=await r.json();if(typeof d.online==="number")document.getElementById("onlCnt").textContent=d.online;}catch(e){}}
-function renderBal(){document.getElementById("balVal").textContent=bal.toFixed(2);}
-function setBal(v){const nv=+Number(v).toFixed(2),diff=+(nv-bal).toFixed(2);bal=nv;renderBal();if(Math.abs(diff)>=0.01)fetch(API+"/api/game/bet",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id,delta:diff})}).catch(()=>{});}
-function switchTab(t){document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("on"));const el=document.getElementById("tab-"+t),nb=document.getElementById("n-"+t);if(el)el.classList.add("on");if(nb)nb.classList.add("on");}
-function goGame(g){switchTab(g);if(g==="mines"&&!mActive)buildMines();if(g==="upgrade")drawUpg(0);}
-function openM(id){document.getElementById(id).classList.add("open");}
-function closeM(id){document.getElementById(id).classList.remove("open");}
-function adj(id,m){const el=document.getElementById(id);el.value=Math.max(10,Math.floor((+el.value||10)*m));}
-function maxB(id){document.getElementById(id).value=Math.max(10,Math.floor(bal));}
-function copyTxt(id){navigator.clipboard.writeText(document.getElementById(id).value);alert("Скопировано!");}
-function setPM(m){payMode=m;new Array("stars","sbp","ton").forEach(x=>{const b=document.getElementById("pm-"+x);b.style.background=x===m?"#312e81":"#1f263e";b.style.color=x===m?"#fff":"#8e96b0";});document.getElementById("ozonBox").style.display=m==="sbp"?"block":"none";const inp=document.getElementById("payInput"),unit=document.getElementById("payUnit");if(m==="stars"){inp.value=10;unit.textContent="Stars";}if(m==="sbp"){inp.value=300;unit.textContent="₽ (Озон)";}if(m==="ton"){inp.value=0.5;unit.textContent="TON";}calcPay();}
-function calcPay(){const v=+(document.getElementById("payInput").value||0);const st=payMode==="stars"?v:(payMode==="sbp"?v*0.5:v*250);document.getElementById("payHint").textContent="К зачислению: "+(st*1.05).toFixed(1)+" ⭐ (+5% бонус)";}
-async function submitDeposit(){
-  const v=+(document.getElementById("payInput").value||0);
+ async function syncBal(){try{const r=await fetch(API+"/api/balance/"+u.id+"?username="+encodeURIComponent(u.username||""));const d=await r.json();if(typeof d.balance==="number"){bal=d.balance;renderBal();}}catch(e){}}
+ async function pingOnline(){try{const r=await fetch(API+"/api/ping",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id})});const d=await r.json();if(typeof d.online==="number")document.getElementById("onlCnt").textContent=d.online;}catch(e){}}
+ function renderBal(){document.getElementById("balVal").textContent=bal.toFixed(2);}
+ function setBal(v){const nv=+Number(v).toFixed(2),diff=+(nv-bal).toFixed(2);bal=nv;renderBal();if(Math.abs(diff)>=0.01)fetch(API+"/api/game/bet",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id,delta:diff})}).catch(()=>{});}
+ function switchTab(t){document.querySelectorAll(".sec").forEach(s=>s.classList.remove("on"));document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("on"));const el=document.getElementById("tab-"+t),nb=document.getElementById("n-"+t);if(el)el.classList.add("on");if(nb)nb.classList.add("on");}
+ function goGame(g){switchTab(g);if(g==="mines"&&!mActive)buildMines();if(g==="upgrade")drawUpg(0);}
+ function openM(id){document.getElementById(id).classList.add("open");}
+ function closeM(id){document.getElementById(id).classList.remove("open");}
+ function adj(id,m){const el=document.getElementById(id);el.value=Math.max(10,Math.floor((+el.value||10)*m));}
+ function maxB(id){document.getElementById(id).value=Math.max(10,Math.floor(bal));}
+ function copyTxt(id){navigator.clipboard.writeText(document.getElementById(id).value);alert("Скопировано!");}
+ function setPM(m){payMode=m;new Array("stars","sbp","ton").forEach(x=>{const b=document.getElementById("pm-"+x);b.style.background=x===m?"#312e81":"#1f263e";b.style.color=x===m?"#fff":"#8e96b0";});document.getElementById("ozonBox").style.display=m==="sbp"?"block":"none";const inp=document.getElementById("payInput"),unit=document.getElementById("payUnit");if(m==="stars"){inp.value=10;unit.textContent="Stars";}if(m==="sbp"){inp.value=300;unit.textContent="₽ (Озон)";}if(m==="ton"){inp.value=0.5;unit.textContent="TON";}calcPay();}
+ function calcPay(){const v=+(document.getElementById("payInput").value||0);const st=payMode==="stars"?v:(payMode==="sbp"?v*0.5:v*250);document.getElementById("payHint").textContent="К зачислению: "+(st*1.05).toFixed(1)+" ⭐ (+5% бонус)";}
+ async function submitDeposit(){
+
   if(payMode==="stars"){
     if(v<10)return alert("Минимум 10 ⭐");
     try{const r=await fetch(API+"/api/stars/invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:u.id,stars:Math.floor(v)})});const d=await r.json();closeM("depM");if(d.invoice_link&&tg&&tg.openInvoice)tg.openInvoice(d.invoice_link,s=>{if(s==="paid")setTimeout(syncBal,1000);});else if(d.invoice_link)window.location.href=d.invoice_link;else alert("Откройте приложение внутри Telegram-бота @zetup_game_bot!");}catch(e){alert("Ошибка связи с сервером.");}
