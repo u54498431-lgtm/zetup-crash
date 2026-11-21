@@ -630,3 +630,89 @@ async function crashCashOut(){try{const d=await apiPost("/api/crash/cash",{user_
   }
   requestAnimationFrame(loopSpace);
 })();
+/* === ТРАССА (30 ШАГОВ + 2.5D МАШИНЫ + ПЛАШКА ВЫИГРЫША НАД КРОКОДИЛОМ) === */
+let rAct=false,rStep=0,rDiff=1,rBet=0,rCrash=false,rScr=0,rCX=46,rTX=46,rLane=-1,rCCar=null,rHop=0;
+const rCars=Array({lane:0,y:-80,sp:2.4,type:0},{lane:1,y:-210,sp:3.0,type:1},{lane:2,y:-140,sp:3.6,type:2});
+function rMult(d,s){if(s<=0)return 1;const b=d===0?1.19:(d===1?1.35:(d===2?1.58:1.95));return +(Math.pow(b,s).toFixed(2));}
+function setRD(d,el){if(rAct)return;rDiff=d;vib();document.querySelectorAll("#rDiffRow .qbtn").forEach(b=>b.classList.remove("active"));el.classList.add("active");updRUI();}
+function updRUI(){
+  const curWin=+(rBet*rMult(rDiff,rStep)).toFixed(2);
+  document.getElementById("rInfo").textContent="Шаг: "+rStep+"/30 · ×"+rMult(rDiff,rStep).toFixed(2).replace(".",",")+(rAct&&rStep>0?" ("+curWin+" ⭐)":"");
+  const b=document.getElementById("rBtn"),cb=document.getElementById("rCashBtn");
+  if(!rAct){b.style.display="block";b.textContent="Начать игру";cb.style.display="none";}
+  else{b.style.display="block";b.textContent="Шаг вперёд ("+(rStep+1)+"/30) →";cb.style.display=rStep>0?"block":"none";cb.textContent="Забрать "+curWin.toFixed(2)+" ⭐";}
+}
+async function roadAct(){
+  if(!rAct){
+    const v=+(document.getElementById("rBetInp").value||10);if(v<1)return showToast("Минимум 1 ⭐");
+    try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});setBal(d.balance,d.total_deposited);addCashback(v);vib();rAct=true;rCrash=false;rStep=0;rBet=v;rLane=-1;rCX=46;rTX=46;rCCar=null;updRUI();}catch(e){showToast(e.message);}
+  }else stepRoad();
+}
+function stepRoad(){
+  if(!rAct||rCrash)return;
+  const ns=rStep+1,nl=(ns-1)%3;
+  rLane=nl;rTX=148+nl*82;rScr+=64;rHop=14;vib();
+  const prob=rDiff===0?0.18:(rDiff===1?0.28:(rDiff===2?0.38:0.50));
+  if(Math.random()<prob){
+    rCrash=true;rAct=false;rCCar={lane:nl,y:-90,sp:14,type:1};vib("heavy");
+    setTimeout(()=>{showToast("💥 Машина сбила крокодила!");updRUI();},400);
+  }else{
+    rStep=ns;updRUI();
+    if(rStep>=30){showToast("🏆 Все 30 шагов пройдены!");roadCash();}
+  }
+}
+document.getElementById("cvRoad").onclick=stepRoad;
+async function roadCash(){
+  if(!rAct||rStep===0||rCrash)return;
+  const win=+(rBet*rMult(rDiff,rStep)).toFixed(2);rAct=false;updRUI();
+  try{const res=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});setBal(res.balance,res.total_deposited);vib("ok");showToast("Забрано +"+win+" ⭐!");}catch(e){}
+}
+function draw25DCar(x,c){
+  const cx=148+c.lane*82-23,y=c.y,h=c.type===1?84:70;
+  x.fillStyle="rgba(0,0,0,.42)";x.fillRect(cx+5,y+7,46,h);
+  x.fillStyle="#0f172a";x.fillRect(cx-3,y+16,4,13);x.fillRect(cx+45,y+16,4,13);x.fillRect(cx-3,y+h-25,4,13);x.fillRect(cx+45,y+h-25,4,13);
+  x.fillStyle=c.type===0?"#1e293b":(c.type===1?"#f97316":"#eab308");x.fillRect(cx,y,46,h);
+  x.fillStyle=c.type===0?"#334155":(c.type===1?"#fb923c":"#fde047");x.fillRect(cx+5,y+10,36,h-34);
+  x.fillStyle="#0284c7";x.fillRect(cx+6,y+h-22,34,12);
+  x.fillStyle="rgba(255,255,255,.38)";x.fillRect(cx+9,y+h-20,12,4);
+  x.fillStyle="#fef08a";x.fillRect(cx+4,y+h-4,10,4);x.fillRect(cx+32,y+h-4,10,4);
+  if(c.type===1){x.fillStyle="#dc2626";x.fillRect(cx+17,y+16,12,26);x.fillStyle="#fde047";x.fillRect(cx+21,y+18,4,22);}
+}
+(function loopR(){
+  const cv=document.getElementById("cvRoad");
+  if(cv&&document.getElementById("p-road").classList.contains("active")){
+    const x=cv.getContext("2d"),w=cv.width,h=cv.height;
+    x.clearRect(0,0,w,h);
+    x.fillStyle="#94a3b8";x.fillRect(0,0,92,h);x.fillStyle="#64748b";x.fillRect(86,0,6,h);
+    for(let py=(rScr%42)-42;py<h;py+=42){x.strokeStyle="#cbd5e1";x.strokeRect(2,py,82,42);}
+    x.fillStyle="#15803d";x.beginPath();x.arc(14,45,22,0,Math.PI*2);x.fill();
+    x.fillStyle="#dc2626";x.fillRect(10,105,46,34);x.fillStyle="#facc15";x.fillRect(10,116,46,10);
+    x.fillStyle="#fff";x.beginPath();x.arc(46,h-42,20,0,Math.PI*2);x.fill();x.strokeStyle="#ef4444";x.lineWidth=4;x.stroke();
+    x.beginPath();x.moveTo(32,h-56);x.lineTo(60,h-28);x.stroke();
+    x.fillStyle="#1a2033";x.fillRect(92,0,w-92,h);
+    x.strokeStyle="rgba(148,163,184,.35)";x.lineWidth=3;x.setLineDash(Array(15,15));x.lineDashOffset=-rScr;
+    Array(189,271).forEach(lx=>{x.beginPath();x.moveTo(lx,0);x.lineTo(lx,h);x.stroke();});x.setLineDash(Array());
+    for(let l=0;l<3;l++){
+      const mx=148+l*82,my=196,st=rStep-(rStep%3)+l+1,ok=rAct&&l<(rStep%3);
+      if(st<=30){
+        x.fillStyle=ok?"#1e293b":"#2b344e";x.beginPath();x.arc(mx,my,25,0,Math.PI*2);x.fill();
+        x.strokeStyle=ok?"#10b981":"#475569";x.lineWidth=3;x.stroke();
+        if(ok){x.fillStyle="#34d399";x.font="bold 21px sans-serif";x.textAlign="center";x.fillText("★",mx,my+7);}
+        else{x.fillStyle="#28324d";x.fillRect(mx-25,my+28,50,18);x.fillStyle="#cbd5e1";x.font="bold 10px sans-serif";x.textAlign="center";x.fillText("×"+rMult(rDiff,st).toFixed(2).replace(".",","),mx,my+40);}
+      }
+    }
+    rCars.forEach(c=>{if(!rCrash||c.lane!==rLane){c.y+=c.sp;if(c.y>h+90)c.y=-90;if(rAct&&c.lane===rLane&&Math.abs(c.y-162)<60)c.y=-90;draw25DCar(x,c);}});
+    if(rCCar){rCCar.y+=rCCar.sp;draw25DCar(x,rCCar);}
+    rCX+=(rTX-rCX)*0.24;if(rHop>0)rHop*=0.82;
+    const cy=162-rHop;
+    if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,rCX-28,cy,56,56);
+    else{x.font="36px serif";x.textAlign="center";x.fillText("🐊",rCX,cy+34);}
+    if(rCrash){x.fillStyle="rgba(239,68,68,.85)";x.beginPath();x.arc(rCX,cy+26,28,0,Math.PI*2);x.fill();x.fillStyle="#fff";x.font="900 18px sans-serif";x.textAlign="center";x.fillText("💥",rCX,cy+32);}
+    else if(rAct&&rStep>0){
+      const curWin=(rBet*rMult(rDiff,rStep)).toFixed(2)+" ⭐";
+      x.fillStyle="#10b981";x.fillRect(rCX-34,cy-24,68,20);
+      x.fillStyle="#052e16";x.font="900 11px sans-serif";x.textAlign="center";x.fillText(curWin,rCX,cy-10);
+    }
+  }
+  requestAnimationFrame(loopR);
+})();
