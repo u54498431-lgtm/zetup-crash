@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ZetUP — Crash & Arcade</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #080b14;
+      --card: #121726;
+      --card2: #192036;
+      --gold: #f59e0b;
+      --green: #10b981;
+      --red: #ef4444;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 84px; overflow-x: hidden; }
+    .topbar { position: sticky; top: 0; z-index: 40; display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: rgba(8,11,20,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; }
+    .online-pill { display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.14); color: #34d399; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
+    .wallet-box { display: flex; align-items: center; gap: 8px; }
+    .bal-pill { background: var(--card2); border: 1px solid rgba(245,158,11,0.3); padding: 6px 11px; border-radius: 12px; font-weight: 800; font-size: 14px; color: #fbbf24; }
+    .btn-dep { background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; border: none; border-radius: 12px; padding: 7px 12px; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .container { padding: 12px; max-width: 520px; margin: 0 auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .card { background: var(--card); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 14px; margin-bottom: 12px; }
+    .history-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; scrollbar-width: none; }
+    .history-bar::-webkit-scrollbar { display: none; }
+    .hist-chip { flex-shrink: 0; padding: 4px 9px; border-radius: 8px; font-size: 12px; font-weight: 800; background: #1e293b; color: #94a3b8; }
+    .hist-chip.mid { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .hist-chip.high { background: rgba(168,85,247,0.25); color: #c084fc; }
+    .crash-stage { position: relative; height: 220px; border-radius: 16px; background: radial-gradient(circle at 50% 80%, #1e1b4b, #090d1a 75%); overflow: hidden; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .mult-val { font-size: 46px; font-weight: 900; z-index: 5; text-shadow: 0 4px 24px rgba(0,0,0,0.6); }
+    .mult-sub { font-size: 13px; font-weight: 700; color: var(--muted); z-index: 5; margin-top: 4px; }
+    .rocket-sprite { position: absolute; font-size: 44px; bottom: 26px; left: 28px; transition: transform 0.15s linear; z-index: 4; filter: drop-shadow(0 0 14px rgba(245,158,11,0.7)); }
+    .controls-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .inp-group { background: var(--card2); border-radius: 12px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.07); }
+    .inp-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+    input[type="number"], input[type="text"] { width: 100%; background: transparent; border: none; color: #fff; font-size: 16px; font-weight: 800; outline: none; }
+    .quick-btns { display: flex; gap: 4px; margin-top: 6px; }
+    .qbtn { flex: 1; background: rgba(255,255,255,0.06); border: none; color: #cbd5e1; border-radius: 7px; padding: 4px 0; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .action-btn { width: 100%; border: none; border-radius: 14px; padding: 14px; font-size: 16px; font-weight: 800; color: #fff; cursor: pointer; margin-top: 10px; }
+    .btn-green { background: linear-gradient(135deg, #10b981, #059669); }
+    .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .btn-disabled { background: #334155; color: #94a3b8; cursor: not-allowed; }
+    .bets-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+    .bet-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--card2); border-radius: 11px; margin-bottom: 6px; font-size: 13px; }
+    .bet-item.me { border: 1px solid rgba(59,130,246,0.55); background: rgba(37,99,235,0.14); }
+    .bet-item.won { border: 1px solid rgba(16,185,129,0.5); }
+    .badge-x { background: rgba(16,185,129,0.2); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 800; font-size: 12px; }
+    #roadCanvas { width: 100%; height: 390px; border-radius: 16px; display: block; background: #1e2436; border: 1px solid rgba(255,255,255,0.1); }
+    .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; margin: 10px 0; }
+    .mine-cell { aspect-ratio: 1; border-radius: 12px; background: var(--card2); border: 1px solid rgba(255,255,255,0.08); font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 800; }
+    .mine-cell.safe { background: rgba(16,185,129,0.2); border-color: #10b981; }
+    .mine-cell.boom { background: rgba(239,68,68,0.25); border-color: #ef4444; }
+    .cases-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .cases-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .case-card { background: var(--card2); border-radius: 16px; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
+    .case-img { width: 88px; height: 88px; object-fit: contain; margin: 0 auto 8px; display: block; border-radius: 12px; }
+    .roulette-wrap { position: relative; overflow: hidden; height: 96px; background: #0b0f1c; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); margin: 12px 0; }
+    .roulette-pin { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; background: #ef4444; z-index: 10; box-shadow: 0 0 10px #ef4444; }
+    .roulette-track { display: flex; align-items: center; height: 100%; will-change: transform; }
+    .r-item { flex: 0 0 84px; height: 76px; margin: 0 4px; border-radius: 11px; background: #1e293b; border-bottom: 3px solid #3b82f6; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+    .r-item.epic { border-bottom-color: #a855f7; background: rgba(168,85,247,0.16); }
+    .r-item.gold { border-bottom-color: #f59e0b; background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(12,16,29,0.96); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.07); display: flex; justify-content: space-around; padding: 8px 4px 14px; z-index: 50; }
+    .nav-btn { background: none; border: none; color: var(--muted); font-size: 11px; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+    .nav-btn.active { color: #60a5fa; }
+    .nav-ico { font-size: 19px; }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.78); display: none; align-items: flex-end; justify-content: center; z-index: 100; }
+    .modal-bg.open { display: flex; }
+    .modal { background: var(--card); width: 100%; max-width: 520px; border-radius: 22px 22px 0 0; padding: 18px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .toast { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 9px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; z-index: 200; border: 1px solid rgba(255,255,255,0.12); display: none; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <span>🐊 ZetUP</span>
+      <span class="online-pill"><span class="dot"></span><span id="onlineCnt">1</span></span>
+    </div>
+    <div class="wallet-box">
+      <div class="bal-pill"><span id="balVal">0.00</span> ⭐</div>
+      <button class="btn-dep" onclick="openDep()">+ Пополнить</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="container">
+    <!-- CRASH PAGE -->
+    <div id="page-crash" class="page active">
+      <div class="card">
+        <div class="history-bar" id="crashHist"></div>
+        <div class="crash-stage">
+          <div id="rocketSprite" class="rocket-sprite">🚀</div>
+          <div id="crashMult" class="mult-val">1.00x</div>
+          <div id="crashSub" class="mult-sub">Ожидание раунда...</div>
+        </div>
+
+        <div class="controls-row">
+          <div class="inp-group">
+            <div class="inp-label">Ставка (⭐)</div>
+            <input type="number" id="crashBetInp" value="10" min="1" />
+            <div class="quick-btns">
+              <button class="qbtn" onclick="setCrashBet(10)">10</button>
+              <button class="qbtn" onclick="setCrashBet(50)">50</button>
+              <button class="qbtn" onclick="multCrashBet(2)">x2</button>
+              <button class="qbtn" onclick="halfCrashBet()">1/2</button>
+            </div>
+          </div>
+          <div class="inp-group">
+            <div class="inp-label">Авто-вывод (x)</div>
+            <input type="number" id="autoCashInp" value="2.00" step="0.1" min="1.1" />
+            <div class="quick-btns">
+              <button class="qbtn" onclick="document.getElementById('autoCashInp').value=''">Выкл</button>
+              <button class="qbtn" onclick="document.getElementById('autoCashInp').value='1.50'">1.5x</button>
+              <button class="qbtn" onclick="document.getElementById('autoCashInp').value='2.00'">2.0x</button>
+            </div>
+          </div>
+        </div>
+
+        <button id="crashBtn" class="action-btn btn-green" onclick="handleCrashBtn()">Поставить</button>
+      </div>
+
+      <div class="card">
+        <div class="bets-header">
+          <span>Игроки в раунде (<span id="betsCount">0</span>)</span>
+          <span>Ставка / Икс</span>
+        </div>
+        <div id="liveBetsList"></div>
+      </div>
+    </div>
+
+    <!-- ROAD ARCADE PAGE -->
+    <div id="page-road" class="page">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-weight:800;font-size:15px;">🐊 Крокодил на трассе</div>
+          <div style="font-size:13px;font-weight:800;color:#fbbf24;">Шаг: <span id="roadStep">0</span> | <span id="roadMult">1.00x</span></div>
+        </div>
+        <canvas id="roadCanvas" width="380" height="390"></canvas>
+        <div class="controls-row">
+          <div class="inp-group">
+            <div class="inp-label">Ставка (⭐)</div>
+            <input type="number" id="roadBetInp" value="10" min="1" />
+          </div>
+          <div class="inp-group">
+            <div class="inp-label">Сложность трафика</div>
+            <select id="roadDiff" style="width:100%;background:transparent;border:none;color:#fff;font-size:15px;font-weight:800;outline:none;">
+              <option value="0.22" style="background:#121726;">Лёгкая (x1.22+)</option>
+              <option value="0.33" selected style="background:#121726;">Средняя (x1.42+)</option>
+              <option value="0.48" style="background:#121726;">Хардкор (x1.80+)</option>
+            </select>
+          </div>
+        </div>
+        <button id="roadBtn" class="action-btn btn-green" onclick="handleRoadBtn()">Начать забег</button>
+      </div>
+    </div>
+    <!-- MINES PAGE -->
+    <div id="page-mines" class="page">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:800;">💣 Мины</span>
+          <span style="color:#34d399;font-weight:800;" id="minesMult">1.00x <span style="color:#94a3b8;font-size:12px;" id="minesNext">(след: 1.09x)</span></span>
+        </div>
+        <div class="mines-grid" id="minesGrid"></div>
+        <div class="controls-row">
+          <div class="inp-group">
+            <div class="inp-label">Ставка (⭐)</div>
+            <input type="number" id="minesBetInp" value="10" min="1" />
+          </div>
+          <div class="inp-group">
+            <div class="inp-label">Мины (от 3 до 24)</div>
+            <input type="number" id="minesCntInp" value="3" min="3" max="24" onchange="updateMinesPreview()" />
+            <div class="quick-btns">
+              <button class="qbtn" onclick="setMines(3)">3</button>
+              <button class="qbtn" onclick="setMines(5)">5</button>
+              <button class="qbtn" onclick="setMines(10)">10</button>
+              <button class="qbtn" onclick="setMines(15)">15</button>
+              <button class="qbtn" onclick="setMines(24)">24</button>
+            </div>
+          </div>
+        </div>
+        <button id="minesBtn" class="action-btn btn-green" onclick="handleMinesBtn()">Играть</button>
+      </div>
+    </div>
+
+    <!-- CASES PAGE -->
+    <div id="page-cases" class="page">
+      <div class="cases-grid">
+        <div class="case-card" style="border:1px solid rgba(16,185,129,0.4);">
+          <div style="font-size:48px;margin-bottom:6px;">🎁</div>
+          <div style="font-weight:800;font-size:15px;">Ежедневный бесплатный кейс</div>
+          <div style="color:#34d399;font-size:12px;margin:4px 0 8px;">Призы от 1 ⭐ до 50 ⭐ каждые 24 часа</div>
+          <button id="dailyCaseBtn" class="action-btn btn-green" style="padding:11px;font-size:14px;" onclick="startCaseSpin('daily', 0)">Открыть бесплатно</button>
+        </div>
+        <div class="cases-two">
+          <div class="case-card">
+            <div style="font-size:56px;margin-bottom:8px;">📦</div>
+            <div style="font-weight:800;font-size:14px;">Стартовый бокс</div>
+            <div style="color:#94a3b8;font-size:12px;margin:4px 0 8px;">До 150 ⭐</div>
+            <button class="action-btn btn-green" style="padding:10px;font-size:13px;" onclick="startCaseSpin('start', 25)">Открыть 25 ⭐</button>
+          </div>
+          <div class="case-card">
+            <img src="nft_box.png.PNG" class="case-img" alt="NFT Box" />
+            <div style="font-weight:800;font-size:14px;">Кибер-Кроко NFT</div>
+            <div style="color:#94a3b8;font-size:12px;margin:4px 0 8px;">До 1000 ⭐</div>
+            <button class="action-btn btn-gold" style="padding:10px;font-size:13px;" onclick="startCaseSpin('nft', 100)">Открыть 100 ⭐</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div id="page-profile" class="page">
+      <div class="card">
+        <div style="font-weight:800;font-size:16px;margin-bottom:4px;" id="profName">Игрок</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Telegram ID: <span id="profId">—</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div class="inp-group">
+            <div class="inp-label">Баланс</div>
+            <div style="font-weight:800;color:#fbbf24;" id="profBal">0.00 ⭐</div>
+          </div>
+          <div class="inp-group">
+            <div class="inp-label">Депозитов</div>
+            <div style="font-weight:800;color:#34d399;" id="profDep">0.00 ⭐</div>
+          </div>
+        </div>
+        <div style="font-weight:800;font-size:14px;margin-bottom:6px;">Вывод звёзд (от 1500 ⭐)</div>
+        <div class="inp-group" style="margin-bottom:8px;">
+          <div class="inp-label">Сумма вывода (⭐)</div>
+          <input type="number" id="wdAmount" placeholder="1500" />
+        </div>
+        <div class="inp-group" style="margin-bottom:8px;">
+          <div class="inp-label">@username или TON-кошелёк</div>
+          <input type="text" id="wdWallet" placeholder="@username" />
+        </div>
+        <button class="action-btn btn-gold" onclick="requestWithdraw()">Заказать вывод</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="switchTab('crash', this)"><span class="nav-ico">🚀</span>Ракета</button>
+    <button class="nav-btn" onclick="switchTab('road', this)"><span class="nav-ico">🐊</span>Трасса</button>
+    <button class="nav-btn" onclick="switchTab('mines', this)"><span class="nav-ico">💣</span>Мины</button>
+    <button class="nav-btn" onclick="switchTab('cases', this)"><span class="nav-ico">🎁</span>Кейсы</button>
+    <button class="nav-btn" onclick="switchTab('profile', this)"><span class="nav-ico">👤</span>Профиль</button>
+  </div>
+
+  <div id="depModal" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-weight:800;font-size:17px;">Пополнение Telegram Stars (+5%)</div>
+        <button onclick="document.getElementById('depModal').classList.remove('open')" style="background:none;border:none;color:#94a3b8;font-size:20px;">✕</button>
+      </div>
+      <div class="inp-group" style="margin-bottom:10px;">
+        <div class="inp-label">Количество Stars</div>
+        <input type="number" id="depStarsInp" value="50" min="1" />
+        <div class="quick-btns">
+          <button class="qbtn" onclick="document.getElementById('depStarsInp').value=10">10 ⭐</button>
+          <button class="qbtn" onclick="document.getElementById('depStarsInp').value=50">50 ⭐</button>
+          <button class="qbtn" onclick="document.getElementById('depStarsInp').value=100">100 ⭐</button>
+          <button class="qbtn" onclick="document.getElementById('depStarsInp').value=500">500 ⭐</button>
+        </div>
+      </div>
+      <button class="action-btn btn-green" onclick="payStars()">Оплатить Stars</button>
+    </div>
+  </div>
+
+  <div id="caseModal" class="modal-bg">
+    <div class="modal" style="text-align:center;">
+      <div style="font-weight:800;font-size:17px;" id="caseSpinTitle">Открытие кейса...</div>
+      <div class="roulette-wrap">
+        <div class="roulette-pin"></div>
+        <div class="roulette-track" id="rouletteTrack"></div>
+      </div>
+      <div id="caseSpinResult" style="font-size:15px;font-weight:800;color:#fbbf24;min-height:24px;">Крутим ленту...</div>
+    </div>
+  </div>
+  <script>
+    const API = "https:" + "//185-103-102-204.sslip.io";
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
+
+    let tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (!tgUser) {
+      let localId = localStorage.getItem("zetup_guest_id");
+      if (!localId) {
+        localId = String(Math.floor(100000000 + Math.random() * 899999999));
+        localStorage.setItem("zetup_guest_id", localId);
+      }
+      tgUser = { id: Number(localId), first_name: "Гость-" + localId.slice(-4), username: "" };
+    }
+
+    const USER_ID = Number(tgUser.id);
+    const USER_NAME = tgUser.username ? "@" + tgUser.username : (tgUser.first_name || ("ID-" + String(USER_ID).slice(-4)));
+    document.getElementById("profName").textContent = USER_NAME;
+    document.getElementById("profId").textContent = USER_ID;
+
+    let balance = 0, totalDep = 0, syncing = false, autoCashedRound = -1;
+    let crashState = { round_id: 0, phase: "waiting", mult: 1.00, remaining: 8, history: [], bets: [] };
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg; t.style.display = "block";
+      clearTimeout(window._tt);
+      window._tt = setTimeout(() => t.style.display = "none", 2400);
+    }
+
+    function updateBalUI(b, td) {
+      balance = Number(b || 0);
+      if (td !== undefined) totalDep = Number(td || 0);
+      document.getElementById("balVal").textContent = balance.toFixed(2);
+      document.getElementById("profBal").textContent = balance.toFixed(2) + " ⭐";
+      document.getElementById("profDep").textContent = totalDep.toFixed(2) + " ⭐";
+    }
+
+    async function apiPost(path, body) {
+      const res = await fetch(API + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Ошибка сервера");
+      return data;
+    }
+
+    async function syncState() {
+      if (syncing) return;
+      syncing = true;
+      try {
+        const d = await apiPost("/api/state", { user_id: USER_ID, username: USER_NAME });
+        updateBalUI(d.balance, d.total_deposited);
+        document.getElementById("onlineCnt").textContent = d.online || 1;
+        if (d.crash) { crashState = d.crash; renderCrash(); }
+      } catch (e) {} finally { syncing = false; }
+    }
+    setInterval(syncState, 350);
+    syncState();
+
+    function switchTab(name, el) {
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("page-" + name).classList.add("active");
+      el.classList.add("active");
+    }
+
+    function openDep() { document.getElementById("depModal").classList.add("open"); }
+
+    async function payStars() {
+      const stars = Math.floor(Number(document.getElementById("depStarsInp").value));
+      if (!stars || stars < 1) return showToast("Введите сумму от 1 ⭐");
+      try {
+        const d = await apiPost("/api/stars/invoice", { user_id: USER_ID, stars });
+        if (tg && tg.openInvoice) {
+          tg.openInvoice(d.invoice_link, async (st) => {
+            if (st === "paid") {
+              document.getElementById("depModal").classList.remove("open");
+              showToast("Оплачено! Зачисляем звёзды...");
+              await syncState();
+              setTimeout(syncState, 600);
+            }
+          });
+        } else { window.open(d.invoice_link, "_blank"); }
+      } catch (e) { showToast(e.message); }
+    }
+
+    async function requestWithdraw() {
+      const stars = Number(document.getElementById("wdAmount").value);
+      const wallet = document.getElementById("wdWallet").value.trim();
+      if (stars < 1500) return showToast("Минимум для вывода: 1500 ⭐");
+      if (!wallet) return showToast("Укажите @username или кошелёк");
+      try {
+        const d = await apiPost("/api/withdraw", { user_id: USER_ID, username: USER_NAME, stars, wallet });
+        updateBalUI(d.balance);
+        showToast("Заявка на вывод отправлена!");
+      } catch (e) { showToast("Нужно депозитов от 500 ⭐ и баланс от 1500 ⭐"); }
+    }
+    /* ================= CRASH GAME ================= */
+    function setCrashBet(v) { document.getElementById("crashBetInp").value = v; }
+    function multCrashBet(k) { document.getElementById("crashBetInp").value = Math.max(1, Math.round(Number(document.getElementById("crashBetInp").value) * k)); }
+    function halfCrashBet() { document.getElementById("crashBetInp").value = Math.max(1, Math.floor(Number(document.getElementById("crashBetInp").value) / 2)); }
+
+    function renderCrash() {
+      const histEl = document.getElementById("crashHist");
+      histEl.innerHTML = (crashState.history || []).map(x => {
+        const cls = x >= 5 ? "high" : (x >= 2 ? "mid" : "");
+        return `<span class="hist-chip ${cls}">${Number(x).toFixed(2)}x</span>`;
+      }).join("");
+
+      const multEl = document.getElementById("crashMult");
+      const subEl = document.getElementById("crashSub");
+      const rocket = document.getElementById("rocketSprite");
+      const btn = document.getElementById("crashBtn");
+      const myBet = (crashState.bets || []).find(b => Number(b.user_id) === USER_ID);
+
+      if (crashState.phase === "waiting") {
+        multEl.style.color = "#f8fafc";
+        multEl.textContent = crashState.remaining.toFixed(1) + "с";
+        subEl.textContent = "Приём ставок на раунд #" + crashState.round_id;
+        rocket.style.transform = "translate(0px, 0px) rotate(0deg)";
+        if (myBet) {
+          btn.className = "action-btn btn-disabled";
+          btn.textContent = `Ставка принята (${myBet.bet} ⭐)`;
+        } else {
+          btn.className = "action-btn btn-green";
+          btn.textContent = "Поставить";
+        }
+      } else if (crashState.phase === "flying") {
+        const m = Number(crashState.mult);
+        multEl.style.color = "#34d399";
+        multEl.textContent = m.toFixed(2) + "x";
+        subEl.textContent = "Ракета в полёте!";
+        const dx = Math.min(230, (m - 1) * 55);
+        const dy = Math.min(130, (m - 1) * 32);
+        rocket.style.transform = `translate(${dx}px, -${dy}px) rotate(-12deg)`;
+
+        const autoX = Number(document.getElementById("autoCashInp").value);
+        if (myBet && myBet.cash_mult === null && autoX >= 1.1 && m >= autoX && autoCashedRound !== crashState.round_id) {
+          autoCashedRound = crashState.round_id;
+          cashOutCrash();
+        }
+
+        if (myBet && myBet.cash_mult === null) {
+          btn.className = "action-btn btn-gold";
+          btn.textContent = `Забрать ${(myBet.bet * m).toFixed(2)} ⭐`;
+        } else if (myBet && myBet.cash_mult !== null) {
+          btn.className = "action-btn btn-disabled";
+          btn.textContent = `Забрано на ${Number(myBet.cash_mult).toFixed(2)}x (+${myBet.win} ⭐)`;
+        } else {
+          btn.className = "action-btn btn-disabled";
+          btn.textContent = "Полёт идёт...";
+        }
+      } else {
+        multEl.style.color = "#ef4444";
+        multEl.textContent = Number(crashState.mult).toFixed(2) + "x";
+        subEl.textContent = "Улетела!";
+        btn.className = "action-btn btn-disabled";
+        btn.textContent = "Новый раунд скоро...";
+      }
+
+      const listEl = document.getElementById("liveBetsList");
+      const bets = crashState.bets || [];
+      document.getElementById("betsCount").textContent = bets.length;
+      listEl.innerHTML = bets.length ? bets.map(b => {
+        const isMe = Number(b.user_id) === USER_ID;
+        const won = b.cash_mult !== null;
+        return `<div class="bet-item ${isMe ? 'me' : ''} ${won ? 'won' : ''}">
+          <div><b>${b.name}</b> ${isMe ? '(Вы)' : ''} — <span style="color:#fbbf24">${b.bet} ⭐</span></div>
+          <div>${won ? `<span class="badge-x">${Number(b.cash_mult).toFixed(2)}x (+${b.win} ⭐)</span>` : '<span style="color:#94a3b8;font-size:12px;">В игре</span>'}</div>
+        </div>`;
+      }).join("") : `<div style="text-align:center;color:#64748b;font-size:12px;padding:10px;">Ставок пока нет — будьте первым!</div>`;
+    }
+
+    async function handleCrashBtn() {
+      const myBet = (crashState.bets || []).find(b => Number(b.user_id) === USER_ID);
+      if (crashState.phase === "waiting" && !myBet) {
+        const bet = Number(document.getElementById("crashBetInp").value);
+        if (bet < 1) return showToast("Минимальная ставка 1 ⭐");
+        try {
+          const d = await apiPost("/api/crash/bet", { user_id: USER_ID, username: USER_NAME, bet });
+          updateBalUI(d.balance, d.total_deposited);
+          syncState();
+        } catch (e) { showToast(e.message); }
+      } else if (crashState.phase === "flying" && myBet && myBet.cash_mult === null) {
+        await cashOutCrash();
+      }
+    }
+
+    async function cashOutCrash() {
+      try {
+        const d = await apiPost("/api/crash/cash", { user_id: USER_ID });
+        updateBalUI(d.balance, d.total_deposited);
+        showToast(`Выигрыш +${d.win} ⭐ (${d.mult}x)`);
+        syncState();
+      } catch (e) {}
+    }
+    /* ================= 3D INFINITE ROAD ARCADE ================= */
+    const canvas = document.getElementById("roadCanvas");
+    const ctx = canvas.getContext("2d");
+    const crocImg = new Image();
+    crocImg.src = encodeURI("Croco .png");
+
+    let roadActive = false, roadBet = 0, roadStep = 0, roadMult = 1.00, roadCrashed = false;
+    let crocLane = -1, crocX = 48, crocTargetX = 48, scrollY = 0;
+    let cars = [], crashCar = null;
+
+    function spawnTraffic() {
+      cars = [];
+      const colors = ["#f97316", "#eab308", "#3b82f6"];
+      for (let lane = 0; lane < 3; lane++) {
+        cars.push({ lane, y: -80 - lane * 140, speed: 2.3 + lane * 0.6, color: colors[lane], isTruck: lane === 0 });
+      }
+    }
+    spawnTraffic();
+
+    function getStepMult(step, diff) {
+      if (step <= 0) return 1.00;
+      const base = diff == 0.22 ? 1.22 : (diff == 0.33 ? 1.42 : 1.80);
+      return Number(Math.pow(base, step).toFixed(2));
+    }
+
+    async function handleRoadBtn() {
+      if (!roadActive) {
+        const bet = Number(document.getElementById("roadBetInp").value);
+        if (bet < 1) return showToast("Минимальная ставка 1 ⭐");
+        try {
+          const d = await apiPost("/api/bet", { user_id: USER_ID, username: USER_NAME, delta: -bet });
+          updateBalUI(d.balance, d.total_deposited);
+          roadActive = true; roadCrashed = false; roadBet = bet; roadStep = 0; roadMult = 1.00;
+          crocLane = -1; crocX = 48; crocTargetX = 48; crashCar = null;
+          spawnTraffic();
+          updateRoadUI();
+        } catch (e) { showToast(e.message); }
+      } else if (roadStep > 0 && !roadCrashed) {
+        const win = Number((roadBet * roadMult).toFixed(2));
+        roadActive = false;
+        try {
+          const d = await apiPost("/api/bet", { user_id: USER_ID, username: USER_NAME, delta: win });
+          updateBalUI(d.balance, d.total_deposited);
+          showToast(`Забрано +${win} ⭐ (${roadMult}x)!`);
+        } catch (e) {}
+        updateRoadUI();
+      }
+    }
+
+    function updateRoadUI() {
+      document.getElementById("roadStep").textContent = roadStep;
+      document.getElementById("roadMult").textContent = roadMult.toFixed(2) + "x";
+      const btn = document.getElementById("roadBtn");
+      if (!roadActive) {
+        btn.className = "action-btn btn-green";
+        btn.textContent = "Начать забег";
+      } else if (roadStep === 0) {
+        btn.className = "action-btn btn-disabled";
+        btn.textContent = "Нажмите на люк справа ->";
+      } else {
+        btn.className = "action-btn btn-gold";
+        btn.textContent = `Забрать ${(roadBet * roadMult).toFixed(2)} ⭐`;
+      }
+    }
+
+    canvas.addEventListener("click", () => {
+      if (!roadActive || roadCrashed) return;
+      const diff = Number(document.getElementById("roadDiff").value);
+      const nextStep = roadStep + 1;
+      const nextLane = (nextStep - 1) % 3;
+      crocLane = nextLane;
+      crocTargetX = 148 + nextLane * 82;
+      scrollY += 65;
+
+      if (Math.random() < diff) {
+        roadCrashed = true;
+        roadActive = false;
+        crashCar = { lane: nextLane, y: -70, speed: 14, color: "#f97316", isTruck: true };
+        setTimeout(() => { showToast("💥 Машина сбила крокодила!"); updateRoadUI(); }, 420);
+      } else {
+        roadStep = nextStep;
+        roadMult = getStepMult(roadStep, diff);
+        updateRoadUI();
+      }
+    });
+
+    function drawCar(c) {
+      const x = 148 + c.lane * 82 - 22;
+      const y = c.y;
+      const h = c.isTruck ? 78 : 64;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(x + 5, y + 6, 44, h);
+      ctx.fillStyle = c.color;
+      ctx.fillRect(x, y, 44, h);
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(x + 6, y + h - 22, 32, 12);
+      ctx.fillStyle = "#fef08a";
+      ctx.fillRect(x + 5, y + h - 4, 9, 4);
+      ctx.fillRect(x + 30, y + h - 4, 9, 4);
+    }
+
+    function loopRoad() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillRect(0, 0, 96, canvas.height);
+      ctx.fillStyle = "#64748b";
+      ctx.fillRect(88, 0, 8, canvas.height);
+      for (let py = (scrollY % 44) - 44; py < canvas.height; py += 44) {
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(2, py, 84, 44);
+      }
+      ctx.fillStyle = "#15803d";
+      ctx.beginPath(); ctx.arc(14, 70, 24, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(14, 290, 26, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(54, 345, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 4; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(39, 330); ctx.lineTo(69, 360); ctx.stroke();
+
+      ctx.fillStyle = "#1e2538";
+      ctx.fillRect(96, 0, canvas.width - 96, canvas.height);
+      ctx.strokeStyle = "rgba(148,163,184,0.35)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([16, 16]);
+      ctx.lineDashOffset = -scrollY;
+      [189, 271].forEach(lx => { ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, canvas.height); ctx.stroke(); });
+      ctx.setLineDash([]);
+
+      const diff = Number(document.getElementById("roadDiff").value);
+      for (let lane = 0; lane < 3; lane++) {
+        const mx = 148 + lane * 82;
+        const my = 215;
+        const stepForLane = roadStep - (roadStep % 3) + lane + 1;
+        const passed = roadActive && lane < (roadStep % 3);
+        ctx.fillStyle = passed ? "#1e293b" : "#2d3652";
+        ctx.beginPath(); ctx.arc(mx, my, 27, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = passed ? "#f59e0b" : "#475569";
+        ctx.lineWidth = 3; ctx.stroke();
+        if (passed) {
+          ctx.fillStyle = "#fbbf24"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center";
+          ctx.fillText("★", mx, my + 8);
+        } else {
+          ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
+          ctx.fillText(getStepMult(stepForLane, diff) + "x", mx, my + 44);
+        }
+      }
+
+      cars.forEach(c => {
+        if (!roadCrashed || c.lane !== crocLane) {
+          c.y += c.speed;
+          if (c.y > canvas.height + 90) c.y = -90;
+          if (roadActive && c.lane === crocLane && Math.abs(c.y - 180) < 55) c.y = -90;
+          drawCar(c);
+        }
+      });
+      if (crashCar) { crashCar.y += crashCar.speed; drawCar(crashCar); }
+
+      crocX += (crocTargetX - crocX) * 0.22;
+      const cy = roadCrashed ? 225 : 178;
+      if (crocImg.complete && crocImg.naturalWidth > 0) {
+        ctx.save();
+        if (roadCrashed) {
+          ctx.translate(crocX, cy + 25);
+          ctx.rotate(Math.PI / 2);
+          ctx.drawImage(crocImg, -30, -30, 60, 60);
+        } else {
+          ctx.drawImage(crocImg, crocX - 30, cy, 60, 60);
+        }
+        ctx.restore();
+      } else {
+        ctx.font = "38px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("🐊", crocX, cy + 38);
+      }
+      requestAnimationFrame(loopRoad);
+    }
+    loopRoad();
+    /* ================= MINES GAME (3..24 MINES) ================= */
+    let minesActive = false, minesBet = 0, minesMap = [], minesOpened = 0, minesMult = 1;
+
+    function calcMinesMult(opened, minesCnt) {
+      let m = 1.0;
+      for (let k = 0; k < opened; k++) {
+        m *= (25 - k) / (25 - minesCnt - k);
+      }
+      return Number(Math.max(1.01, m * 0.96).toFixed(2));
+    }
+
+    function setMines(n) {
+      if (minesActive) return;
+      document.getElementById("minesCntInp").value = n;
+      updateMinesPreview();
+    }
+
+    function updateMinesPreview() {
+      const cnt = Math.min(24, Math.max(3, Number(document.getElementById("minesCntInp").value) || 3));
+      document.getElementById("minesCntInp").value = cnt;
+      const cur = minesActive && minesOpened > 0 ? minesMult : 1.00;
+      const nxt = calcMinesMult(minesOpened + 1, cnt);
+      document.getElementById("minesMult").innerHTML = `${cur.toFixed(2)}x <span style="color:#94a3b8;font-size:12px;">(след: ${nxt.toFixed(2)}x)</span>`;
+    }
+    updateMinesPreview();
+
+    function renderMinesGrid() {
+      const g = document.getElementById("minesGrid");
+      g.innerHTML = "";
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement("div");
+        cell.className = "mine-cell";
+        cell.textContent = "?";
+        cell.onclick = () => clickMine(i, cell);
+        g.appendChild(cell);
+      }
+    }
+    renderMinesGrid();
+
+    async function handleMinesBtn() {
+      if (!minesActive) {
+        const bet = Number(document.getElementById("minesBetInp").value);
+        const cnt = Math.min(24, Math.max(3, Number(document.getElementById("minesCntInp").value) || 3));
+        document.getElementById("minesCntInp").value = cnt;
+        if (bet < 1) return showToast("Минимум 1 ⭐");
+        try {
+          const d = await apiPost("/api/bet", { user_id: USER_ID, username: USER_NAME, delta: -bet });
+          updateBalUI(d.balance, d.total_deposited);
+          minesActive = true; minesBet = bet; minesOpened = 0; minesMult = 1.00;
+          minesMap = Array(25).fill(0);
+          let placed = 0;
+          while (placed < cnt) {
+            const idx = Math.floor(Math.random() * 25);
+            if (!minesMap[idx]) { minesMap[idx] = 1; placed++; }
+          }
+          renderMinesGrid();
+          updateMinesPreview();
+          document.getElementById("minesBtn").className = "action-btn btn-gold";
+          document.getElementById("minesBtn").textContent = "Забрать " + bet.toFixed(2) + " ⭐";
+        } catch (e) { showToast(e.message); }
+      } else if (minesOpened > 0) {
+        const win = Number((minesBet * minesMult).toFixed(2));
+        minesActive = false;
+        const d = await apiPost("/api/bet", { user_id: USER_ID, username: USER_NAME, delta: win });
+        updateBalUI(d.balance, d.total_deposited);
+        showToast(`Выигрыш +${win} ⭐!`);
+        document.getElementById("minesBtn").className = "action-btn btn-green";
+        document.getElementById("minesBtn").textContent = "Играть";
+      }
+    }
+
+    function clickMine(i, cell) {
+      if (!minesActive || cell.classList.contains("safe")) return;
+      if (minesMap[i] === 1) {
+        cell.classList.add("boom");
+        cell.textContent = "💣";
+        minesActive = false;
+        showToast("💥 Вы попали на мину!");
+        document.getElementById("minesBtn").className = "action-btn btn-green";
+        document.getElementById("minesBtn").textContent = "Играть";
+      } else {
+        cell.classList.add("safe");
+        cell.textContent = "💎";
+        minesOpened++;
+        const cnt = Number(document.getElementById("minesCntInp").value);
+        minesMult = calcMinesMult(minesOpened, cnt);
+        updateMinesPreview();
+        document.getElementById("minesBtn").textContent = `Забрать ${(minesBet * minesMult).toFixed(2)} ⭐`;
+      }
+    }
+
+    /* ================= CASES + STANDOFF ROULETTE + DAILY TIMER ================= */
+    let spinning = false;
+
+    function updateDailyTimer() {
+      const btn = document.getElementById("dailyCaseBtn");
+      const last = Number(localStorage.getItem("zetup_daily_ts_" + USER_ID) || 0);
+      const diff = 86400000 - (Date.now() - last);
+      if (diff > 0) {
+        const h = String(Math.floor(diff / 3600000)).padStart(2, "0");
+        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
+        const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
+        btn.className = "action-btn btn-disabled";
+        btn.textContent = `Через ${h}:${m}:${s}`;
+      } else {
+        btn.className = "action-btn btn-green";
+        btn.textContent = "Открыть бесплатно";
+      }
+    }
+    setInterval(updateDailyTimer, 1000);
+    updateDailyTimer();
+
+    async function startCaseSpin(type, cost) {
+      if (spinning) return;
+      if (type === "daily") {
+        const last = Number(localStorage.getItem("zetup_daily_ts_" + USER_ID) || 0);
+        if (Date.now() - last < 86400000) return showToast("Ежедневный кейс пока на перезарядке!");
+      } else {
+        try {
+          const d1 = await apiPost("/api/bet", { user_id: USER_ID, username: USER_NAME, delta: -cost });
+          updateBalUI(d1.balance, d1.total_deposited);
+        } catch (e) { return showToast(e.message); }
+      }
+
+      spinning = true;
+            const pools = {
+        daily: Array(1, 2, 5, 10, 25, 50),
+        start: Array(10, 15, 20, 35, 75, 150),
+        nft: Array(40, 60, 80, 120, 250, 500, 1000)
+      };
+
+      const pool = pools[type];
+      const r = Math.random();
+      const winVal = r < 0.55 ? pool[Math.floor(Math.random() * 3)] : (r < 0.88 ? pool[3 + Math.floor(Math.random() * 2)] : pool[5 + Math.floor(Math.random() * (pool.length - 5))]);
+
+      const winIdx = 28;
+      const track = document.getElementById("rouletteTrack");
+      track.style.transition = "none";
+      track.style.transform = "translateX(0px)";
+      let html = "";
+      for (let i = 0; i < 34; i++) {
+        const val = i === winIdx ? winVal : pool[Math.floor(Math.random() * pool.length)];
+        const cls = val >= pool[pool.length - 2] ? "gold" : (val >= pool[3] ? "epic" : "");
+        html += `<div class="r-item ${cls}"><div>⭐</div><div>${val}</div></div>`;
+      }
+      track.innerHTML = html;
+
+      document.getElementById("caseSpinTitle").textContent = type === "daily" ? "Ежедневный кейс" : (type === "start" ? "Стартовый бокс" : "Кибер-Кроко NFT");
+      document.getElementById("caseSpinResult").textContent = "Крутим ленту...";
+      document.getElementById("caseModal").classList.add("open");
+
+      const wrapW = document.querySelector(".roulette-wrap").offsetWidth || 320;
+      const targetOffset = (winIdx * 92 + 46) - (wrapW / 2) + (Math.random() * 24 - 12);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          track.style.transition = "transform 4.2s cubic-bezier(0.12, 0.82, 0.18, 1)";
+          track.style.transform = `translateX(-${targetOffset}px)`;
+        });
+      });
+
+      setTimeout(async () => {
+        if (type === "daily") {
+          localStorage.setItem("zetup_daily_ts_" + USER_ID, String(Date.now()));
+          updateDailyTimer();
+        }
+        try {
+          const d2 = await apiPost("/api/bet", { user_id: USER_ID, username: USER_NAME, delta: winVal });
+          updateBalUI(d2.balance, d2.total_deposited);
+        } catch (e) {}
+        document.getElementById("caseSpinResult").textContent = `🎉 Выпало: ${winVal} ⭐!`;
+        spinning = false;
+        setTimeout(() => document.getElementById("caseModal").classList.remove("open"), 1500);
+      }, 4350);
+    }
+  </script>
+</body>
+</html>
