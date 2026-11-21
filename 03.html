@@ -152,7 +152,7 @@
      <div class="gcard" style="height:175px" onclick="previewCase('nft')">
        <img src="nft_box.png.PNG">
        <div class="gcard-top"><span style="background:#00f5a0;color:#000;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:900">NFT БОКС</span></div>
-       <div style="position:relative;z-index:2"><div style="font-weight:800;font-size:14px;text-shadow:0 2px 6px #000">Кибер-Кроко NFT</div><button class="btn-play" style="padding:8px;margin-top:5px;font-size:12px">80 ⭐ • Внутри</button></div>
+       <div style="position:relative;z-index:2"><div style="font-weight:800;font-size:14px;text-shadow:0 2px 6px #000">Кибер-Кроко NFT</div><button class="btn-play" style="padding:8px;margin-top:5px;font-size:12px">49 ⭐ • Внутри</button></div>
      </div>
    </div>
    <div id="casePreview" class="panel" style="display:none">
@@ -227,7 +227,7 @@
    </div>
  </div>
  <script>
- const API="https://sslip.io",tg=window.Telegram&&window.Telegram.WebApp;
+ const API="https://185-103-102-204.sslip.io",tg=window.Telegram&&window.Telegram.WebApp;
  if(tg){tg.ready();tg.expand();}
  const u=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)||{id:8990817653,first_name:"Zet",username:"player"};
  document.getElementById("uAva").textContent=(u.first_name||"Z").slice(0,1).toUpperCase();
@@ -320,32 +320,7 @@
    if(rStep>=5)roadCash();
  }
  function roadCash(){if(!rActive||rStep===0)return;setBal(bal+(rBetVal*rMult(rDiff,rStep-1)));rActive=false;document.getElementById("rBtn").textContent="Начать игру";document.getElementById("rCashBtn").style.display="none";}
- function drawCroco(ctx,x,y){
-   ctx.fillStyle="#22c55e";ctx.beginPath();ctx.ellipse(x,y+4,15,12,0,0,6.28);ctx.fill();
-   ctx.fillStyle="#4ade80";ctx.beginPath();ctx.ellipse(x+5,y-6,13,9,0,0,6.28);ctx.fill();
-   ctx.fillStyle="#0f172a";ctx.fillRect(x-1,y-11,14,6);ctx.fillStyle="#38bdf8";ctx.fillRect(x,y-10,5,4);ctx.fillRect(x+7,y-10,5,4);
- }
- function drawBoat(ctx,x,y,col){
-   ctx.fillStyle="rgba(255,255,255,.35)";ctx.beginPath();ctx.moveTo(x+20,y-12);ctx.lineTo(x+5,y);ctx.lineTo(x+35,y);ctx.fill();
-   ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x+20,y+58);ctx.lineTo(x+38,y+38);ctx.lineTo(x+35,y+4);ctx.lineTo(x+5,y+4);ctx.lineTo(x+2,y+38);ctx.closePath();ctx.fill();
-   ctx.fillStyle="#0f172a";ctx.beginPath();ctx.moveTo(x+20,y+42);ctx.lineTo(x+30,y+28);ctx.lineTo(x+10,y+28);ctx.closePath();ctx.fill();
- }
- function drawRoad(){
-   const cv=document.getElementById("cvRoad"),ctx=cv.getContext("2d");
-   ctx.fillStyle="#fde68a";ctx.fillRect(0,0,84,250);
-   ctx.fillStyle="#38bdf8";ctx.fillRect(84,0,296,250);
-   ctx.strokeStyle="rgba(255,255,255,.45)";ctx.lineWidth=3;new Array(180,275).forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,250);ctx.stroke();});
-   for(let i=0;i<3;i++){
-     const lx=132+i*95,m=rMult(rDiff,Math.min(4,Math.max(0,rStep>2?rStep-2+i:i)));
-     ctx.fillStyle="#16a34a";ctx.beginPath();ctx.arc(lx,125,25,0,6.28);ctx.fill();
-     ctx.fillStyle="#ef4444";ctx.beginPath();ctx.arc(lx,125,20,0,6.28);ctx.fill();
-     ctx.fillStyle="#38bdf8";ctx.beginPath();ctx.arc(lx,125,9,0,6.28);ctx.fill();
-     ctx.fillStyle="#fff";ctx.font="900 12px sans-serif";ctx.textAlign="center";ctx.fillText("×"+m.toFixed(2).replace('.',','),lx,166);
-   }
-   boats.forEach(c=>{c.y+=c.sp*(1+rDiff*0.4);if(c.y>265)c.y=-60;drawBoat(ctx,112+c.lane*95,c.y,c.col);});
-   drawCroco(ctx,rStep===0?42:132+Math.min(2,rStep-1)*95,123);
-   requestAnimationFrame(drawRoad);
- }
+ 
  document.getElementById("cvRoad").onclick=()=>{if(rActive)stepRoad();};
  let mCnt=3,mActive=false,mBombs=new Array(),mOpen=0,mBetVal=0;
  function chgMines(d){if(!mActive){mCnt=Math.min(20,Math.max(2,mCnt+d));document.getElementById("mCnt").textContent=mCnt;}}
@@ -359,6 +334,53 @@
    if(mBombs.includes(i)){el.style.background="rgba(239,68,68,.25)";el.textContent="🐊";mActive=false;document.getElementById("mBtn").className="btn-play";document.getElementById("mBtn").textContent="Попался крокодилу!";return;}
    mOpen++;el.style.background="rgba(0,245,160,.2)";el.textContent="💎";const mult=+(1+mOpen*(0.12+mCnt*0.04)).toFixed(2);
    document.getElementById("mMultInfo").textContent="Множитель: ×"+mult.toFixed(2).replace('.',',');document.getElementById("mBtn").textContent="Забрать "+(mBetVal*mult).toFixed(1)+" ⭐";
+ }
+ function drawCroco(ctx,x,y){
+   ctx.save();ctx.translate(x,y);
+   ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(0,18,16,6,0,0,6.28);ctx.fill();
+   ctx.fillStyle="#15803d";ctx.beginPath();ctx.roundRect(-13,-2,26,20,9);ctx.fill();
+   ctx.fillStyle="#22c55e";ctx.beginPath();ctx.ellipse(2,-11,15,11,0,0,6.28);ctx.fill();
+   ctx.fillStyle="#4ade80";ctx.beginPath();ctx.ellipse(12,-9,9,6,0,0,6.28);ctx.fill();
+   ctx.fillStyle="#0f172a";ctx.beginPath();ctx.roundRect(-4,-17,22,7,3);ctx.fill();
+   ctx.fillStyle="#38bdf8";ctx.fillRect(-1,-15,7,4);ctx.fillRect(9,-15,7,4);
+   ctx.fillStyle="#fff";ctx.fillRect(10,-4,3,3);ctx.fillRect(15,-4,3,3);
+   ctx.restore();
+ }
+ function drawBoat(ctx,x,y,col){
+   ctx.save();ctx.translate(x+20,y+30);
+   const wake=ctx.createLinearGradient(0,-48,0,-25);wake.addColorStop(0,"rgba(255,255,255,0)");wake.addColorStop(1,"rgba(255,255,255,.6)");
+   ctx.fillStyle=wake;ctx.beginPath();ctx.moveTo(0,-24);ctx.lineTo(-16,-48);ctx.lineTo(16,-48);ctx.fill();
+   ctx.fillStyle="rgba(0,0,0,.24)";ctx.beginPath();ctx.ellipse(3,4,17,30,0,0,6.28);ctx.fill();
+   ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(0,32);ctx.quadraticCurveTo(18,14,15,-26);ctx.lineTo(-15,-26);ctx.quadraticCurveTo(-18,14,0,32);ctx.fill();
+   ctx.fillStyle="rgba(255,255,255,.3)";ctx.beginPath();ctx.moveTo(0,26);ctx.lineTo(7,-22);ctx.lineTo(-7,-22);ctx.fill();
+   ctx.fillStyle="#0f172a";ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(10,-4);ctx.lineTo(-10,-4);ctx.fill();
+   ctx.restore();
+ }
+ function drawRoad(){
+   const cv=document.getElementById("cvRoad"),ctx=cv.getContext("2d");
+   const sand=ctx.createLinearGradient(0,0,86,0);sand.addColorStop(0,"#f59e0b");sand.addColorStop(.85,"#fde68a");sand.addColorStop(1,"#fef3c7");
+   ctx.fillStyle=sand;ctx.fillRect(0,0,86,250);
+   ctx.fillStyle="rgba(255,255,255,.8)";ctx.fillRect(82,0,6,250);
+   const sea=ctx.createLinearGradient(88,0,380,0);sea.addColorStop(0,"#06b6d4");sea.addColorStop(.5,"#0284c7");sea.addColorStop(1,"#0369a1");
+   ctx.fillStyle=sea;ctx.fillRect(88,0,292,250);
+   ctx.strokeStyle="rgba(255,255,255,.18)";ctx.lineWidth=2;
+   for(let w=0;w<6;w++){const wy=((Date.now()/28+w*44)%250);ctx.beginPath();ctx.moveTo(95,wy);ctx.quadraticCurveTo(230,wy-6,372,wy);ctx.stroke();}
+   ctx.setLineDash(new Array(8,8));ctx.strokeStyle="rgba(255,255,255,.45)";ctx.lineWidth=2;
+   new Array(180,275).forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,250);ctx.stroke();});ctx.setLineDash(new Array());
+   for(let i=0;i<3;i++){
+     const lx=132+i*95,m=rMult(rDiff,Math.min(4,Math.max(0,rStep>2?rStep-2+i:i)));
+     ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.arc(lx+2,128,26,0,6.28);ctx.fill();
+     ctx.fillStyle="#15803d";ctx.beginPath();ctx.arc(lx,125,26,0,6.28);ctx.fill();
+     ctx.fillStyle="#bef264";ctx.beginPath();ctx.arc(lx,125,22,0,6.28);ctx.fill();
+     ctx.fillStyle="#ef4444";ctx.beginPath();ctx.arc(lx,125,19,0,6.28);ctx.fill();
+     ctx.fillStyle="#0f172a";for(let k=0;k<6;k++){const a=k*1.04;ctx.beginPath();ctx.arc(lx+Math.cos(a)*14,125+Math.sin(a)*14,1.6,0,6.28);ctx.fill();}
+     ctx.fillStyle="#0284c7";ctx.beginPath();ctx.arc(lx,125,8,0,6.28);ctx.fill();
+     ctx.fillStyle="rgba(15,23,42,.75)";ctx.beginPath();ctx.roundRect(lx-24,154,48,18,6);ctx.fill();
+     ctx.fillStyle="#fde047";ctx.font="900 11px sans-serif";ctx.textAlign="center";ctx.fillText("×"+m.toFixed(2).replace('.',','),lx,167);
+   }
+   boats.forEach(c=>{c.y+=c.sp*(1+rDiff*0.42);if(c.y>275)c.y=-65;drawBoat(ctx,112+c.lane*95,c.y,c.col);});
+   drawCroco(ctx,rStep===0?42:132+Math.min(2,rStep-1)*95,122);
+   requestAnimationFrame(drawRoad);
  }
 
  let uMult=2,uSpin=false;
@@ -384,29 +406,30 @@
    {n:"Signet Ring",img:"IMG_3828.jpeg"},
    {n:"Astral Ring",img:"IMG_3829.jpeg"}
  );
- function previewCase(type){
+  function previewCase(type){
    const box=document.getElementById("casePreview"),grid=document.getElementById("cpGrid"),btn=document.getElementById("cpOpenBtn");
    box.style.display="block";
    if(type==="daily"){
-     document.getElementById("cpTitle").textContent="🎁 Подарок дня (раз в 24ч)";
-     grid.innerHTML='<div class="r-item"><div style="font-size:24px">⭐</div><div>1 ⭐ (95%)</div></div><div class="r-item"><div style="font-size:24px">⭐</div><div>3 ⭐ (4%)</div></div><div class="r-item"><div style="font-size:24px">🌟</div><div>15 ⭐ (1%)</div></div>';
+     document.getElementById("cpTitle").textContent="🎁 Подарок дня";
+     grid.innerHTML='<div class="r-item"><div style="font-size:24px">⭐</div><div style="margin-top:4px;color:#00f5a0">1 ⭐</div></div><div class="r-item"><div style="font-size:24px">⭐</div><div style="margin-top:4px;color:#00f5a0">3 ⭐</div></div><div class="r-item"><div style="font-size:24px">🌟</div><div style="margin-top:4px;color:#facc15">15 ⭐</div></div>';
      btn.textContent="Открыть бесплатно";btn.onclick=()=>spinCase("daily",0);
    }else{
      document.getElementById("cpTitle").textContent="🐊 Содержимое Кибер-Кроко NFT";
      let h=nftList.map(x=>'<div class="r-item" style="height:105px"><img src="'+x.img+'" style="width:52px;height:52px;border-radius:10px;object-fit:cover"><div style="margin-top:4px;color:#a5b4fc;font-size:10px">'+x.n+'</div></div>').join("");
-     h+='<div class="r-item" style="height:105px"><div style="font-size:26px">⭐</div><div style="margin-top:4px;color:#00f5a0">35 ⭐ / 120 ⭐</div></div>';
-     grid.innerHTML=h;btn.textContent="Открыть за 80 ⭐";btn.onclick=()=>spinCase("nft",80);
+     h+=new Array(5,10,25,45,70).map(s=>'<div class="r-item" style="height:105px"><div style="font-size:26px">⭐</div><div style="margin-top:4px;color:#00f5a0">'+s+' ⭐</div></div>').join("");
+     grid.innerHTML=h;btn.textContent="Открыть за 49 ⭐";btn.onclick=()=>spinCase("nft",49);
    }
  }
  function spinCase(type,cost){
    if(type==="daily"){const last=+(localStorage.getItem("z_daily")||0);if(Date.now()-last<86400000)return alert("Бесплатный подарок раз в 24 часа!");localStorage.setItem("z_daily",Date.now());}
    else{if(bal<cost)return alert("Недостаточно звёзд!");setBal(bal-cost);}
-   const r=Math.random(),prize=type==="daily"?(r<0.95?{n:"1 ⭐",v:1}:(r<0.99?{n:"3 ⭐",v:3}:{n:"15 ⭐",v:15})):(r<0.85?{n:"35 ⭐",v:35}:{n:"120 ⭐",v:120});
+   const r=Math.random(),prize=type==="daily"?(r<0.95?{n:"1 ⭐",v:1}:(r<0.99?{n:"3 ⭐",v:3}:{n:"15 ⭐",v:15})):(r<0.35?{n:"5 ⭐",v:5}:(r<0.85?{n:"10 ⭐",v:10}:(r<0.93?{n:"25 ⭐",v:25}:(r<0.98?{n:"45 ⭐",v:45}:{n:"70 ⭐",v:70}))));
    const tr=document.getElementById("rTrack");tr.style.transition="none";tr.style.transform="translateX(0px)";
+   const starsPool=new Array("5 ⭐","10 ⭐","25 ⭐","45 ⭐","70 ⭐");
    let html="";for(let i=0;i<30;i++){
      if(i===24)html+='<div class="r-item"><div style="font-size:26px">⭐</div><div style="margin-top:4px;color:#00f5a0">'+prize.n+'</div></div>';
      else if(type==="nft"&&i%2===0){const nf=nftList[i%5];html+='<div class="r-item"><img src="'+nf.img+'" style="width:46px;height:46px;border-radius:8px;object-fit:cover"><div style="margin-top:3px;font-size:10px">'+nf.n+'</div></div>';}
-     else{const st=type==="daily"?(i%2===0?"1 ⭐":"3 ⭐"):(i%3===0?"120 ⭐":"35 ⭐");html+='<div class="r-item"><div style="font-size:24px">⭐</div><div style="margin-top:4px;color:#00f5a0">'+st+'</div></div>';}
+     else{const st=type==="daily"?(i%2===0?"1 ⭐":"3 ⭐"):starsPool[i%5];html+='<div class="r-item"><div style="font-size:24px">⭐</div><div style="margin-top:4px;color:#00f5a0">'+st+'</div></div>';}
    }
    tr.innerHTML=html;document.getElementById("caseResBox").style.display="none";openM("caseM");
    setTimeout(()=>{tr.style.transition="transform 4s cubic-bezier(.1,.85,.2,1)";tr.style.transform="translateX(-2090px)";},50);
@@ -415,6 +438,7 @@
      document.getElementById("btnSellPrize").textContent="Забрать "+prize.v+" ⭐";document.getElementById("btnSellPrize").onclick=()=>{setBal(bal+prize.v);closeM("caseM");};
    },4150);
  }
+
 
  window.onload=()=>{syncBal();pingOnline();setInterval(pingOnline,15000);renderCHist();buildMines();startCrashLoop();drawSpace();drawRoad();drawUpg(0);};
  </script>
