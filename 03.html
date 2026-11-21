@@ -575,7 +575,7 @@ async function openCase(type,cost){
     tr.innerHTML=html;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{tr.style.transition="transform 4s cubic-bezier(0.12,0.82,0.18,1)";tr.style.transform="translateX(-2450px)";}));
   }
-  setTimeout(async()=>{
+    setTimeout(async()=>{
     if(type==="daily"){localStorage.setItem("zetup_daily_"+UID,String(Date.now()));updDailyBtn();}
     try{const d2=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:winVal});setBal(d2.balance,d2.total_deposited);}catch(e){}
     if(document.getElementById("caseWinTxt"))document.getElementById("caseWinTxt").textContent="Выпало: "+winVal+" ⭐!";
