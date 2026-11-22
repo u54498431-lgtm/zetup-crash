@@ -215,7 +215,8 @@ input,select{width:100%;background:transparent;border:none;color:#fff;font-size:
     <div class="card" style="text-align:center;">
       <div style="position:relative;width:210px;height:210px;margin:2px auto;">
         <canvas id="cvUpg" width="210" height="210" style="width:210px;height:210px;display:block;"></canvas>
-             <img id="uCenterImg" src="IMG_4005.jpeg" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:84px;height:84px;object-fit:contain;border-radius:16px;pointer-events:none;transition:filter .3s;"/>
+                 <img id="uCenterImg" src="Bear.png" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:84px;height:84px;object-fit:contain;border-radius:16px;pointer-events:none;transition:filter .3s;"/>
+
 
       </div>
       <div id="uStatusTxt" style="font-weight:900;font-size:16px;color:#34d399;margin:4px 0 10px;">Шанс улучшения 13,3 %</div>
@@ -255,7 +256,7 @@ input,select{width:100%;background:transparent;border:none;color:#fff;font-size:
     <div class="rub-box">
       <div class="rub-head">
         <img id="cCaseImg" src="IMG_3835.jpeg" alt="case"/>
-        <div><div style="font-weight:900;font-size:18px;" id="cCaseName">Подарок дня</div><div style="font-size:12px;color:#94a3b8;" id="cCaseSub">Бесплатно раз в 24 часа</div></div>
+        <div><div style="font-weight :900;font-size:18px;" id="cCaseName">Подарок дня</div><div style="font-size:12px;color:#94a3b8;" id="cCaseSub">Бесплатно раз в 24 часа</div></div>
       </div>
       <div id="rubLanes"></div>
       <div style="display:flex;gap:8px;margin-top:8px;">
@@ -578,10 +579,22 @@ async function crashAct(){
 async function crashCashOut(){try{const d=await apiPost("/api/crash/cash",{user_id:UID});setBal(d.balance,d.total_deposited);vib("ok");syncState();}catch(e){}}
 
 function drawClouds(x,w,h){
-  const clouds=Array({cx:22,cy:h+18,r:62,c:"#1b2136"},{cx:95,cy:h+22,r:68,c:"#1e253d"},{cx:185,cy:h+14,r:74,c:"#232b46"},{cx:285,cy:h+20,r:66,c:"#1c2238"},{cx:360,cy:h+16,r:60,c:"#191f33"});
-  clouds.forEach(cl=>{x.fillStyle=cl.c;x.beginPath();x.arc(cl.cx,cl.cy,cl.r,0,Math.PI*2);x.fill();});
-  x.fillStyle="#14192b";
-  Array(55,145,240,330).forEach((cx,i)=>{x.beginPath();x.arc(cx,h+28+(i%2)*5,54,0,Math.PI*2);x.fill();});
+  const puffs=Array(
+    {cx:18,cy:h+8,r:56},{cx:74,cy:h+14,r:62},{cx:138,cy:h+4,r:66},
+    {cx:205,cy:h+10,r:64},{cx:272,cy:h+5,r:62},{cx:342,cy:h+12,r:58}
+  );
+  puffs.forEach(p=>{
+    const g=x.createRadialGradient(p.cx,p.cy-p.r*0.45,6,p.cx,p.cy,p.r);
+    g.addColorStop(0,"rgba(241,245,249,.92)");
+    g.addColorStop(0.55,"rgba(148,163,184,.58)");
+    g.addColorStop(1,"rgba(30,41,59,.15)");
+    x.fillStyle=g;x.beginPath();x.arc(p.cx,p.cy,p.r,0,Math.PI*2);x.fill();
+  });
+  Array({cx:48,cy:h+24,r:52},{cx:115,cy:h+26,r:56},{cx:185,cy:h+22,r:58},{cx:255,cy:h+25,r:54},{cx:325,cy:h+23,r:52}).forEach(p=>{
+    const g2=x.createRadialGradient(p.cx,p.cy-20,4,p.cx,p.cy,p.r);
+    g2.addColorStop(0,"rgba(226,232,240,.75)");g2.addColorStop(1,"rgba(15,23,42,.85)");
+    x.fillStyle=g2;x.beginPath();x.arc(p.cx,p.cy,p.r,0,Math.PI*2);x.fill();
+  });
 }
 
 (function loopSpace(){
@@ -600,12 +613,12 @@ function drawClouds(x,w,h){
       const targetRem=Math.max(0,Number(crashSrv.remaining||0));
       smoothRem+=(targetRem-smoothRem)*0.18;
       if(Math.abs(targetRem-smoothRem)>2)smoothRem=targetRem;
-      const cx=w*0.5,cy=h*0.43,rad=44,ang=-Math.PI/2+(smoothRem/8)*Math.PI*2;
-      x.strokeStyle="rgba(255,255,255,.1)";x.lineWidth=6;x.beginPath();x.arc(cx,cy,rad,0,Math.PI*2);x.stroke();
+      const cx=w*0.5,cy=h*0.42,rad=44,ang=-Math.PI/2+(smoothRem/8)*Math.PI*2;
+      x.strokeStyle="rgba(255,255,255,.12)";x.lineWidth=6;x.beginPath();x.arc(cx,cy,rad,0,Math.PI*2);x.stroke();
       x.strokeStyle="#10b981";x.lineWidth=6;x.lineCap="round";x.beginPath();x.arc(cx,cy,rad,-Math.PI/2,ang);x.stroke();
       x.fillStyle="#fff";x.beginPath();x.arc(cx+Math.cos(ang)*rad,cy+Math.sin(ang)*rad,4.5,0,Math.PI*2);x.fill();
       x.fillStyle="#fff";x.font="900 34px sans-serif";x.textAlign="center";x.fillText(Math.max(1,Math.ceil(smoothRem)),cx,cy+12);
-      paraX=w*0.5;paraY=h*0.56;
+      paraX=w*0.5;paraY=h*0.48;
     }else if(crashSrv.phase==="flying"){
       let zone=-1;
       if(m>=1.30&&m<=2.10)zone=1;else if(m>=3.50&&m<=5.20)zone=2;else if(m>=8.00&&m<=11.0)zone=3;
@@ -614,7 +627,7 @@ function drawClouds(x,w,h){
       const jx=isShaking?(Math.random()*9-4.5):0,jy=isShaking?(Math.random()*9-4.5):0;
 
       const prog=Math.min(1,(m-1)/2.2);
-      const rx=w*0.46+prog*26+Math.sin(Date.now()/360)*4,ry=h*0.64-prog*28+Math.cos(Date.now()/300)*4;
+      const rx=w*0.46+prog*26+Math.sin(Date.now()/360)*4,ry=h*0.62-prog*28+Math.cos(Date.now()/300)*4;
       paraX=rx;paraY=ry;
 
       for(let k=0;k<2;k++)flames.push({x:rx-36+jx,y:ry+34+jy,vx:-2.6-Math.random()*1.8,vy:1.8+Math.random()*1.4,r:10+Math.random()*8,a:0.95,smoke:Math.random()<0.42});
@@ -637,14 +650,21 @@ function drawClouds(x,w,h){
       x.fillStyle=isShaking?"#fb923c":"#fff";x.font="900 40px sans-serif";x.textAlign="center";
       x.fillText(m.toFixed(2).replace(".",",")+"×",w*0.5,48);
     }else{
-      paraY=Math.min(h-48,paraY+0.9);
-      const sway=Math.sin(Date.now()/280)*10,px=paraX+sway,py=paraY;
-      x.beginPath();x.arc(px,py-36,36,Math.PI,0);x.fillStyle="#facc15";x.fill();
-      x.beginPath();x.arc(px,py-36,36,Math.PI*1.32,Math.PI*1.68);x.lineTo(px,py-36);x.closePath();x.fillStyle="#f8fafc";x.fill();
-      x.strokeStyle="#cbd5e1";x.lineWidth=1.5;
-      Array(-30,-10,10,30).forEach(dx=>{x.beginPath();x.moveTo(px+dx,py-36);x.lineTo(px,py-4);x.stroke();});
-      if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,px-24,py-12,48,48);
-            else{x.font="34px serif";x.textAlign="center";x.fillText("🐊",px,py+18);}
+      paraY=Math.min(h-56,paraY+0.65);
+      const tNow=Date.now(),sway=Math.sin(tNow/320)*12,tilt=Math.sin(tNow/320)*0.16;
+      x.save();x.translate(paraX+sway,paraY);x.rotate(tilt);
+      const cg=x.createRadialGradient(-10,-62,6,0,-44,46);
+      cg.addColorStop(0,"#fef08a");cg.addColorStop(0.55,"#f59e0b");cg.addColorStop(1,"#b45309");
+      x.fillStyle=cg;x.beginPath();x.arc(0,-42,42,Math.PI,0);x.closePath();x.fill();
+      x.fillStyle="rgba(255,255,255,.85)";x.beginPath();x.arc(0,-42,42,Math.PI*1.35,Math.PI*1.65);x.lineTo(0,-42);x.closePath();x.fill();
+      x.strokeStyle="#78350f";x.lineWidth=2;x.beginPath();x.arc(0,-42,42,Math.PI,0);x.stroke();
+      x.strokeStyle="rgba(226,232,240,.85)";x.lineWidth=1.4;
+      Array(-38,-22,-8,8,22,38).forEach(dx=>{x.beginPath();x.moveTo(dx,-42);x.lineTo(dx*0.18,-4);x.stroke();});
+      x.fillStyle="#334155";x.beginPath();x.roundRect(-12,-8,24,14,4);x.fill();
+      if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,-27,-4,54,54);
+      else{x.font="36px serif";x.textAlign="center";x.fillText("🐊",0,28);}
+      x.restore();
+
       x.fillStyle="#f87171";x.font="900 32px sans-serif";x.textAlign="center";
       x.fillText(m.toFixed(2).replace(".",",")+"× · Улетела!",w*0.5,44);
     }
