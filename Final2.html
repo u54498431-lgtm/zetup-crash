@@ -662,17 +662,35 @@ async function roadCash(){
   const win=+(rBet*rMult(rDiff,rStep)).toFixed(2);rAct=false;updRUI();
   try{const res=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});setBal(res.balance,res.total_deposited);vib("ok");showToast("Забрано +"+win+" ⭐!");}catch(e){}
 }
+function rr(x,px,py,w,h,r){x.beginPath();x.roundRect(px,py,w,h,r);}
 function draw25DCar(x,c){
-  const cx=148+c.lane*82-23,y=c.y,h=c.type===1?84:70;
-  x.fillStyle="rgba(0,0,0,.42)";x.fillRect(cx+5,y+7,46,h);
-  x.fillStyle="#0f172a";x.fillRect(cx-3,y+16,4,13);x.fillRect(cx+45,y+16,4,13);x.fillRect(cx-3,y+h-25,4,13);x.fillRect(cx+45,y+h-25,4,13);
-  x.fillStyle=c.type===0?"#1e293b":(c.type===1?"#f97316":"#eab308");x.fillRect(cx,y,46,h);
-  x.fillStyle=c.type===0?"#334155":(c.type===1?"#fb923c":"#fde047");x.fillRect(cx+5,y+10,36,h-34);
-  x.fillStyle="#0284c7";x.fillRect(cx+6,y+h-22,34,12);
-  x.fillStyle="rgba(255,255,255,.38)";x.fillRect(cx+9,y+h-20,12,4);
-  x.fillStyle="#fef08a";x.fillRect(cx+4,y+h-4,10,4);x.fillRect(cx+32,y+h-4,10,4);
-  if(c.type===1){x.fillStyle="#dc2626";x.fillRect(cx+17,y+16,12,26);x.fillStyle="#fde047";x.fillRect(cx+21,y+18,4,22);}
+  const cx=148+c.lane*82-25,y=c.y,w=50,h=c.type===1?90:76;
+  x.save();
+  x.fillStyle="rgba(0,0,0,.45)";rr(x,cx+4,y+6,w,h,14);x.fill();
+  x.fillStyle="#0f172a";
+  rr(x,cx-4,y+16,6,15,3);x.fill();rr(x,cx+w-2,y+16,6,15,3);x.fill();
+  rr(x,cx-4,y+h-26,6,15,3);x.fill();rr(x,cx+w-2,y+h-26,6,15,3);x.fill();
+  const bodyCol=c.type===0?"#1e293b":(c.type===1?"#f97316":"#facc15");
+  const roofCol=c.type===0?"#334155":(c.type===1?"#fb923c":"#fef08a");
+  x.fillStyle=bodyCol;x.strokeStyle="#090d16";x.lineWidth=2.5;
+  rr(x,cx,y,w,h,13);x.fill();x.stroke();
+  x.fillStyle=roofCol;rr(x,cx+6,y+10,w-12,h-36,9);x.fill();
+  x.fillStyle="#0f172a";rr(x,cx+7,y+h-26,w-14,15,5);x.fill();
+  x.fillStyle="rgba(125,211,252,.45)";rr(x,cx+10,y+h-24,14,4,2);x.fill();
+  x.fillStyle="#0f172a";rr(x,cx+14,y+h-6,w-28,5,2);x.fill();
+  x.fillStyle="#fef9c3";rr(x,cx+5,y+h-7,10,5,2);x.fill();rr(x,cx+w-15,y+h-7,10,5,2);x.fill();
+  if(c.type===1){
+    x.fillStyle="#7c2d12";x.font="900 7px sans-serif";x.textAlign="center";
+    x.fillText("Free",cx+w/2,y+h-31);x.fillText("Hot Dogs",cx+w/2,y+h-23);
+    x.fillStyle="#d97706";rr(x,cx+15,y+13,20,30,9);x.fill();
+    x.fillStyle="#dc2626";rr(x,cx+19,y+11,12,34,6);x.fill();
+    x.strokeStyle="#facc15";x.lineWidth=2;x.beginPath();x.moveTo(cx+25,y+14);x.lineTo(cx+23,y+22);x.lineTo(cx+27,y+30);x.lineTo(cx+24,y+40);x.stroke();
+  }else if(c.type===2){
+    x.fillStyle="#0f172a";x.fillRect(cx+17,y+24,16,6);x.fillStyle="#facc15";x.fillRect(cx+21,y+25,8,4);
+  }
+  x.restore();
 }
+
 (function loopR(){
   const cv=document.getElementById("cvRoad");
   if(cv&&document.getElementById("p-road").classList.contains("active")){
