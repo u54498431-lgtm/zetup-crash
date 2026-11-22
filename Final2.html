@@ -641,6 +641,28 @@ function drawClouds(x,w,h){
       x.strokeStyle="#cbd5e1";x.lineWidth=1.5;
       Array(-30,-10,10,30).forEach(dx=>{x.beginPath();x.moveTo(px+dx,py-36);x.lineTo(px,py-4);x.stroke();});
       if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,px-24,py-12,48,48);
+            else{x.font="34px serif";x.textAlign="center";x.fillText("🐊",px,py+18);}
+      x.fillStyle="#f87171";x.font="900 32px sans-serif";x.textAlign="center";
+      x.fillText(m.toFixed(2).replace(".",",")+"× · Улетела!",w*0.5,44);
+    }
+    drawClouds(x,w,h);
+
+    flyBadges.forEach(b=>{
+      b.y+=b.vy;b.x-=0.35;b.a-=0.008;
+      if(b.a>0){
+        x.save();x.globalAlpha=Math.max(0,b.a);
+        x.fillStyle="#26354d";x.beginPath();x.arc(b.x,b.y,13,0,Math.PI*2);x.fill();
+        x.fillStyle="#fff";x.font="bold 10px sans-serif";x.textAlign="center";x.fillText(b.ini,b.x,b.y+3);
+        x.fillStyle="#10b981";x.fillRect(b.x-22,b.y+12,44,15);
+        x.fillStyle="#fff";x.font="bold 9px sans-serif";x.fillText(b.win+" ⭐",b.x,b.y+22);
+        x.restore();
+      }
+    });
+    flyBadges=flyBadges.filter(b=>b.a>0);
+  }
+  requestAnimationFrame(loopSpace);
+})();
+
       /* === ТРАССА (RUBUP: 3D-КУСТЫ + ЗНАК С КРОКОДИЛОМ + ГЛЯНЦЕВЫЕ 3D-МАШИНЫ + ЖИВОЙ КРОКОДИЛ) === */
 let rAct=false,rStep=0,rDiff=1,rBet=0,rCrash=false,rScr=0,rCX=46,rTX=46,rLane=-1,rCCar=null,rHop=0,rSparks=Array();
 const rCars=Array({lane:0,y:-90,sp:2.3,type:0},{lane:1,y:-230,sp:2.9,type:1},{lane:2,y:-155,sp:3.5,type:2});
