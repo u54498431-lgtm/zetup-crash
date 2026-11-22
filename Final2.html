@@ -417,7 +417,8 @@ async function syncState(){
     const d=await apiPost("/api/state",{user_id:UID,username:UNAME});
     setBal(d.balance,d.total_deposited);
     document.getElementById("onCnt").textContent=d.online||1;
-    if(d.crash){crashSrv=d.crash;renderCrashBets();}
+        if(d.crash){crashSrv=d.crash;document.getElementById("cntCrash").textContent=(d.crash.bets||Array()).length;renderCrashBets();}
+
   }catch(e){}finally{syncing=false;}
 }
 setInterval(syncState,350);syncState();
