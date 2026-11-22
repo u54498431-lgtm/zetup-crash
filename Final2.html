@@ -803,8 +803,7 @@ const CASES={
     {n:"3 Звезды",v:3,ch:38.5,img:"",ico:"⭐",c:"rc-green",gift:false},
     {n:"1 Звезда",v:1,ch:45,img:"",ico:"✨",c:"rc-green",gift:false}
   )},
-  nft:{name:"Кибер-Кроко (49 ⭐)",sub:"Редкие NFT и звёзды",cost:49,img:"nft_box.png.PNG",items:Array(
-    {n:"Кроко Фунт NFT",v:1000,ch:0,img:"Без названия30_20261121145255.png",c:"rc-red",gift:true},
+  nft:{name:"Кибер-Кроко (49 ⭐)",sub:"Редкие NFT и звёзды",cost:49,img:encodeURI("Без названия30_20261121145255.png"),items:Array(
     {n:"Genesis NFT",v:650,ch:0,img:"IMG_3829.jpeg",c:"rc-red",gift:true},
     {n:"Diamond NFT",v:400,ch:0,img:"IMG_3828.jpeg",c:"rc-purp",gift:true},
     {n:"Ruby NFT",v:250,ch:0,img:"IMG_3827.jpeg",c:"rc-purp",gift:true},
@@ -816,10 +815,11 @@ const CASES={
     {n:"10 Звёзд",v:10,ch:39,img:"",ico:"⭐",c:"rc-green",gift:false},
     {n:"5 Звёзд",v:5,ch:55,img:"",ico:"✨",c:"rc-green",gift:false}
   )}
+
 };
 let curCase="daily",cMult=1,cFast=false,cSpin=false;
 function itemMedia(it){return it.img?`<img src="${it.img}" alt=""/>`:`<div style="font-size:28px;margin-bottom:2px;">${it.ico}</div>`;}
-function showItemInfo(idx){const it=CASES[curCase].items[idx];document.getElementById("itImg").src=it.img||CASES[curCase].img;document.getElementById("itName").textContent=it.n;document.getElementById("itVal").textContent=it.v+" ⭐";document.getElementById("itChance").textContent=it.ch+" %";openM("itemM");}
+function showItemInfo(idx){const it=CASES[curCase].items[idx];document.getElementById("itImg").src=it.img||CASES[curCase].img;document.getElementById("itName").textContent=it.n;document.getElementById("itVal").textContent=it.v+" ⭐";openM("itemM");}
 function toggleFast(){cFast=!cFast;vib();document.getElementById("cFastBtn").className=cFast?"pbtn gold":"pbtn off";}
 function setCaseMult(m,el){if(cSpin||curCase==="daily")return;cMult=m;vib();document.querySelectorAll(".mchip").forEach(b=>b.classList.remove("active"));el.classList.add("active");renderRubCase();}
 function selCase(k){if(cSpin)return;curCase=k;if(k==="daily")cMult=1;vib();document.querySelectorAll(".ctab").forEach(t=>t.classList.remove("active"));document.getElementById("ct-"+k).classList.add("active");renderRubCase();}
