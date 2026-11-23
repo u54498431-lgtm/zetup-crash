@@ -1042,23 +1042,36 @@ const CASES={
     {n:"Мишка",v:22,ch:75,img:"Bear.png",c:"rc-blue",gift:true}
   )},
   nft:{name:"Кибер-Кроко (49 ⭐)",sub:"Редкие NFT и звёзды",cost:49,img:encodeURI("Без названия30_20261121145255.png"),items:Array(
-    {n:"Genesis NFT",v:650,ch:0,img:"IMG_3829.jpeg",c:"rc-red",gift:true},
-    {n:"Diamond NFT",v:400,ch:0,img:"IMG_3828.jpeg",c:"rc-purp",gift:true},
-    {n:"Ruby NFT",v:250,ch:0,img:"IMG_3827.jpeg",c:"rc-purp",gift:true},
-    {n:"Gold Bear NFT",v:150,ch:0,img:"IMG_3826.jpeg",c:"rc-blue",gift:true},
-    {n:"Cyber Gem NFT",v:120,ch:0,img:"IMG_3825.jpeg",c:"rc-blue",gift:true},
+    {n:"Box's",v:3200,ch:0.00000000001,img:encodeURI("Box's.png"),c:"rc-red",gift:true},
+    {n:"Kolico",v:1900,ch:0.0000001,img:"Kolico.png",c:"rc-red",gift:true},
+    {n:"Tyfli",v:900,ch:0.0008,img:"Tyfli.png",c:"rc-red",gift:true},
+    {n:"Milo",v:750,ch:0.0042,img:"Milo.png",c:"rc-purp",gift:true},
+    {n:"Strawberry",v:590,ch:0.0080,img:"Strawberry.png",c:"rc-purp",gift:true},
+    {n:"Love",v:450,ch:0.0100,img:"Love.png",c:"rc-purp",gift:true},
+    {n:"Cookies",v:400,ch:0.0115,img:"Cookies.png",c:"rc-blue",gift:true},
+    {n:"You love",v:375,ch:0.0125,img:encodeURI("You love.png"),c:"rc-blue",gift:true},
+    {n:"Day",v:375,ch:0.0125,img:"Day.png",c:"rc-blue",gift:true},
+    {n:"Doshik",v:370,ch:0.0125,img:"Doshik.png",c:"rc-blue",gift:true},
+    {n:"Bunny",v:360,ch:0.0130,img:"Bunny.png",c:"rc-blue",gift:true},
+    {n:"Ross nft",v:300,ch:0.0150,img:encodeURI("Ross nft.png"),c:"rc-blue",gift:true},
     {n:"70 Звёзд",v:70,ch:3,img:"",ico:"💎",c:"rc-purp",gift:false},
     {n:"40 Звёзд",v:40,ch:7,img:"",ico:"⭐",c:"rc-blue",gift:false},
     {n:"25 Звёзд",v:25,ch:16,img:"",ico:"⭐",c:"rc-green",gift:false},
     {n:"10 Звёзд",v:10,ch:39,img:"",ico:"⭐",c:"rc-green",gift:false},
-    {n:"5 Звёзд",v:5,ch:55,img:"",ico:"✨",c:"rc-green",gift:false}
+    {n:"5 Звёзд",v:5,ch:34.9,img:"",ico:"✨",c:"rc-green",gift:false}
   )}
 };
 
 let curCase="daily",cMult=1,cFast=false,cSpin=false;
-function itemMedia(it){return it.img?`<img src="${it.img}" alt=""/>`:`<div style="font-size:28px;margin-bottom:2px;">${it.ico}</div>`;}
-function showItemInfo(idx){const it=CASES[curCase].items[idx];document.getElementById("itImg").src=it.img||CASES[curCase].img;document.getElementById("itName").textContent=it.n;document.getElementById("itVal").textContent=it.v+" ⭐";openM("itemM");}
-function toggleFast(){cFast=!cFast;vib();document.getElementById("cFastBtn").className=cFast?"pbtn gold":"pbtn off";}
+function itemMedia(it){return it.img?`<img src="${it.img}" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=this.src.replace('.png','.jpeg');}" alt=""/>`:`<div style="font-size:28px;line-height:36px;">${it.ico}</div>`;}
+function showItemInfo(idx){
+  const it=CASES[curCase].items[idx];if(!it)return;vib();
+  document.getElementById("wgImg").src=it.img||CASES[curCase].img;
+  document.getElementById("wgName").innerHTML=`${it.n}<div style="font-size:14px;color:#fbbf24;margin-top:4px;">Стоимость: <b>${it.v} ⭐</b></div><div style="font-size:13px;color:#34d399;margin-top:2px;">Шанс выпадения: <b>${it.ch}%</b></div>`;
+  document.getElementById("wgSellBtn").style.display="none";
+  openM("winGiftM");
+}
+
 function setCaseMult(m,el){if(cSpin||curCase==="daily")return;cMult=m;vib();document.querySelectorAll(".mchip").forEach(b=>b.classList.remove("active"));el.classList.add("active");renderRubCase();}
 function selCase(k){if(cSpin)return;curCase=k;if(k==="daily")cMult=1;vib();document.querySelectorAll(".ctab").forEach(t=>t.classList.remove("active"));document.getElementById("ct-"+k).classList.add("active");renderRubCase();}
 function renderRubCase(){
