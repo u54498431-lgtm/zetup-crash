@@ -491,12 +491,21 @@ async function claimCashback(){
   try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:amt});setBal(d.balance,d.total_deposited);vib("ok");showToast("🎉 Кэшбэк +"+amt.toFixed(2)+" ⭐ зачислен!");}catch(e){}
 }
 async function applyPromo(){
-  const code=(document.getElementById("promoInp").value||"").trim().toUpperCase();
-  if(!code)return showToast("Введите промокод");
-  if(code!=="ZETUP")return showToast("Неверный промокод");
-  if(localStorage.getItem("zetup_promo_ZETUP_"+UID))return showToast("Вы уже активировали этот промокод!");
-  localStorage.setItem("zetup_promo_ZETUP_"+UID,"1");
-  try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:10});setBal(d.balance,d.total_deposited);vib("ok");showToast("🎉 Промокод ZETUP активирован: +10 ⭐!");document.getElementById("promoInp").value="";}catch(e){}
+  const raw=(document.getElementById("promoInp").value||"").trim();
+  const code=raw.toUpperCase();
+  if(!code)return showToast("Введите промокод!");
+  const PROMOS={"ZETUP":10,"CROCO":15,"STAR25":25};
+  const reward=PROMOS[code];
+  if(!reward)return showToast("Неверный промокод!");
+  if(localStorage.getItem("zetup_promo_"+code+"_"+UID))return showToast("Промокод уже активирован!");
+  try{
+    const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:reward});
+    setBal(d.balance,d.total_deposited);
+    localStorage.setItem("zetup_promo_"+code+"_"+UID,"1");
+    document.getElementById("promoInp").value="";
+    vib("ok");
+    showToast("🎉 Промокод "+raw+" активирован: +"+reward+" ⭐!");
+  }catch(e){showToast(e.message);}
 }
 
 let myGifts=JSON.parse(localStorage.getItem("zetup_gifts_"+UID)||"[]"),pendingGift=null;
