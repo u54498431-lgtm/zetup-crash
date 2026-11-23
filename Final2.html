@@ -870,6 +870,19 @@ function draw25DCar(x,c,offX,braking){
     else{x.font="42px serif";x.textAlign="center";x.fillText("🐊",0,14);}
     x.restore();
 
+    rSparks.forEach(sp=>{sp.x+=sp.vx;sp.y+=sp.vy;sp.vy+=0.25;sp.a-=0.05;if(sp.a>0){x.fillStyle=`rgba(250,204,21,${sp.a})`;x.beginPath();x.arc(sp.x-rCamX,sp.y,3.5,0,Math.PI*2);x.fill();}});
+    rSparks=rSparks.filter(sp=>sp.a>0);
+
+    if(rCrash){x.fillStyle="rgba(239,68,68,.9)";x.beginPath();x.arc(targetX,cy+26,30,0,Math.PI*2);x.fill();x.fillStyle="#fff";x.font="900 20px sans-serif";x.textAlign="center";x.fillText("💥",targetX,cy+33);}
+    else if(rAct&&rStep>0){
+      const curWin=(rBet*rMult(rDiff,rStep)).toFixed(2)+" ⭐";
+      x.fillStyle="#10b981";rr(x,targetX-38,cy-30,76,22,8);x.fill();
+      x.fillStyle="#052e16";x.font="900 11px sans-serif";x.textAlign="center";x.fillText(curWin,targetX,cy-15);
+    }
+    x.fillStyle="rgba(148,163,184,.75)";x.font="700 10px sans-serif";x.textAlign="right";x.fillText("← Листай дорогу пальцем →",w-10,16);
+  }
+  requestAnimationFrame(loopR);
+})();
 
 
 
