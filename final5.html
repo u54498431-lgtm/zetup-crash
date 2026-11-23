@@ -384,10 +384,8 @@ input,select{width:100%;background:transparent;border:none;color:#fff;font-size:
     <button class="pbtn off" style="color:#34d399;border:1px solid rgba(16,185,129,.4);" onclick="upgWonGift()">🎡 Апгрейднуть</button>
   </div>
 </div>
-<script>
-window.onerror = function(m, u, l) { if(!window._err){ window._err=1; document.body.insertAdjacentHTML("afterbegin", "<div style='position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;padding:12px;font-weight:900;font-size:13px;'>СТРОКА " + l + ": " + m + "</div>"); } };
 
-</script>
+
 
 
 <script>
@@ -884,8 +882,8 @@ function draw25DCar(x,c,offX,braking){
 
     rSparks.forEach(sp=>{sp.x+=sp.vx;sp.y+=sp.vy;sp.vy+=0.25;sp.a-=0.05;if(sp.a>0){x.fillStyle=`rgba(250,204,21,${sp.a})`;x.beginPath();x.arc(sp.x-rCamX,sp.y,3.5,0,Math.PI*2);x.fill();}});
     rSparks=rSparks.filter(sp=>sp.a>0);
-
-    if(rCrash){x.fillStyle="rgba(239,68,68,.9)";x.beginPath();x.arc(targetX,cy+26,30,0,Math.PI*2);x.fill();x.fillStyle="#fff";x.font="900 20px sans-serif";x.textAlign="center";x.fillText("💥",targetX,cy+33);}
+    
+    if(rCrash){x.fillStyle="#ef4444";x.beginPath();x.arc(targetX,cy+26,28,0,6.28);x.fill();}
     else if(rAct&&rStep>0){
       const curWin=(rBet*rMult(rDiff,rStep)).toFixed(2)+" ⭐";
       x.fillStyle="#10b981";rr(x,targetX-38,cy-30,76,22,8);x.fill();
