@@ -496,6 +496,7 @@ async function applyPromo(){
   const reward=PROMOS[code];
   if(!reward)return showToast("Неверный промокод!");
   if(localStorage.getItem("zetup_promo_"+code+"_"+UID))return showToast("Промокод уже активирован!");
+
   try{
     const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:reward});
     setBal(d.balance,d.total_deposited);
