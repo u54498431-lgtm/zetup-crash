@@ -30,7 +30,8 @@ body{background:#090d16;color:#f8fafc;padding-bottom:84px;overflow-x:hidden}
 .back-btn{background:#1b2538;border:none;color:#fff;padding:6px 12px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer}
 .hist{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:none}
 .h-chip{flex-shrink:0;padding:4px 9px;border-radius:8px;font-size:12px;font-weight:800;background:#1e293b;color:#94a3b8}
-.stage{position:relative;height:235px;border-radius:16px;background:linear-gradient(180deg,#121625 0%,#0b0e18 100%);overflow:hidden;border:1px solid rgba(255,255,255,.07)}
+.stage{position:relative;height:235px;border-radius:16px;background:radial-gradient(circle at 75% 25%,#111936 0%,#05070e 65%,#020307 100%);overflow:hidden;border:1px solid rgba(255,255,255,.07)}
+
 
 .stage canvas{width:100%;height:100%;display:block}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
@@ -408,6 +409,7 @@ let bal=0,totalDep=0,payMode="stars",syncing=false;
 let crashSrv={round_id:0,phase:"waiting",mult:1.00,remaining:8,history:Array(),bets:Array()};
 const rocketImg=new Image();rocketImg.src="Тема.png";
 const crocImg=new Image();crocImg.src=encodeURI("Croco .png");
+const paraImg=new Image();paraImg.src="CrocoZetUp.png";
 
 function showToast(m){const t=document.getElementById("toast");t.textContent=m;t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",2500);}
 function setBal(v,td){bal=+Number(v||0).toFixed(2);if(td!==undefined)totalDep=+Number(td||0).toFixed(2);document.getElementById("balVal").textContent=bal.toFixed(2);document.getElementById("pDep").textContent=totalDep.toFixed(2);}
@@ -539,7 +541,14 @@ async function submitWithdraw(){
 function upgWonGift(){if(!pendingGift)return;myGifts.push(pendingGift);pendingGift=null;closeM("winGiftM");saveGifts();switchTab("upg");setUpgMode("inv");document.getElementById("uFromSel").value=String(myGifts.length-1);updUpgUI();}
 /* === КРАШ LIVE (RUBUP: 3D-РАКЕТА + РЕАКТИВНЫЙ ОГОНЬ + ОБЛАКА + ПЛАВНЫЙ ТАЙМЕР) === */
 let autoCashDone=-1,lastRoundId=-1,paraY=0,paraX=0,flyBadges=Array(),knownCashIds=new Set(),shakePhase=0,lastShakeZone=-1,smoothRem=8,flames=Array();
-const starsBg=Array.from({length:36},()=>({x:Math.random()*380,y:Math.random()*235,l:Math.random()*9+4,sp:Math.random()*1.6+0.8,a:Math.random()*0.6+0.25}));
+const starsBg=Array.from({length:55},(_,i)=>{
+  const layer=i%3;
+  return{x:Math.random()*380,y:Math.random()*235,r:layer===0?0.8:(layer===1?1.4:2.1),l:layer===0?3:(layer===1?7:13),sp:0.5+layer*0.75,a:0.35+layer*0.28,tw:Math.random()*6};
+});
+const planetsBg=Array(
+  {x:295,y:58,r:24,ring:true,sp:0.22},
+  {x:78,y:172,r:16,ring:false,sp:0.14}
+);
 
 function renderCrashBets(){
   if(crashSrv.round_id!==lastRoundId){lastRoundId=crashSrv.round_id;paraY=0;knownCashIds.clear();flyBadges=Array();shakePhase=0;lastShakeZone=-1;smoothRem=8;flames=Array();}
@@ -578,22 +587,37 @@ async function crashAct(){
 }
 async function crashCashOut(){try{const d=await apiPost("/api/crash/cash",{user_id:UID});setBal(d.balance,d.total_deposited);vib("ok");syncState();}catch(e){}}
 
-function drawClouds(x,w,h){
-  const puffs=Array(
-    {cx:18,cy:h+8,r:56},{cx:74,cy:h+14,r:62},{cx:138,cy:h+4,r:66},
-    {cx:205,cy:h+10,r:64},{cx:272,cy:h+5,r:62},{cx:342,cy:h+12,r:58}
-  );
-  puffs.forEach(p=>{
-    const g=x.createRadialGradient(p.cx,p.cy-p.r*0.45,6,p.cx,p.cy,p.r);
-    g.addColorStop(0,"rgba(241,245,249,.92)");
-    g.addColorStop(0.55,"rgba(148,163,184,.58)");
-    g.addColorStop(1,"rgba(30,41,59,.15)");
-    x.fillStyle=g;x.beginPath();x.arc(p.cx,p.cy,p.r,0,Math.PI*2);x.fill();
+function draw3DSky(x,w,h,flying){
+  const t=Date.now()/700;
+  planetsBg.forEach(p=>{
+    if(flying){p.x-=p.sp;p.y+=p.sp*0.45;if(p.x<-45){p.x=w+45;p.y=Math.random()*130+25;}if(p.y>h+45)p.y=-35;}
+    x.save();
+    x.shadowColor="rgba(255,255,255,.35)";x.shadowBlur=18;
+    const g=x.createRadialGradient(p.x-p.r*0.35,p.y-p.r*0.35,2,p.x,p.y,p.r);
+    g.addColorStop(0,"#ffffff");g.addColorStop(0.55,"#cbd5e1");g.addColorStop(1,"#334155");
+    x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill();
+    x.shadowBlur=0;
+    if(p.ring){
+      x.strokeStyle="rgba(248,250,252,.55)";x.lineWidth=3.5;
+      x.beginPath();x.ellipse(p.x,p.y,p.r*1.75,p.r*0.42,-0.32,0,Math.PI*2);x.stroke();
+    }else{
+      x.fillStyle="rgba(100,116,139,.35)";
+      x.beginPath();x.arc(p.x-4,p.y-3,3.5,0,Math.PI*2);x.fill();
+      x.beginPath();x.arc(p.x+5,p.y+4,2.5,0,Math.PI*2);x.fill();
+    }
+    x.restore();
   });
-  Array({cx:48,cy:h+24,r:52},{cx:115,cy:h+26,r:56},{cx:185,cy:h+22,r:58},{cx:255,cy:h+25,r:54},{cx:325,cy:h+23,r:52}).forEach(p=>{
-    const g2=x.createRadialGradient(p.cx,p.cy-20,4,p.cx,p.cy,p.r);
-    g2.addColorStop(0,"rgba(226,232,240,.75)");g2.addColorStop(1,"rgba(15,23,42,.85)");
-    x.fillStyle=g2;x.beginPath();x.arc(p.cx,p.cy,p.r,0,Math.PI*2);x.fill();
+  starsBg.forEach(s=>{
+    const twA=s.a*(0.72+0.28*Math.sin(t+s.tw));
+    if(flying){
+      s.x-=s.sp*2.1;s.y+=s.sp*1.45;
+      if(s.x<-20)s.x=w+15;if(s.y>h+20)s.y=-15;
+      x.strokeStyle=`rgba(255,255,255,${twA})`;x.lineWidth=s.r;x.lineCap="round";
+      x.beginPath();x.moveTo(s.x,s.y);x.lineTo(s.x+s.l,s.y-s.l*0.68);x.stroke();
+    }else{
+      x.fillStyle=`rgba(255,255,255,${twA})`;
+      x.beginPath();x.arc(s.x,s.y,s.r,0,Math.PI*2);x.fill();
+    }
   });
 }
 
@@ -602,24 +626,21 @@ function drawClouds(x,w,h){
   if(cv&&document.getElementById("p-crash").classList.contains("active")){
     const x=cv.getContext("2d"),w=cv.width,h=cv.height;
     x.clearRect(0,0,w,h);
-    starsBg.forEach(s=>{
-      if(crashSrv.phase==="flying"){s.x-=s.sp*2.2;s.y+=s.sp*1.5;if(s.x<-15)s.x=w+10;if(s.y>h+15)s.y=-10;}
-      x.strokeStyle=`rgba(199,210,254,${s.a})`;x.lineWidth=1.5;
-      x.beginPath();x.moveTo(s.x,s.y);x.lineTo(s.x+s.l,s.y-s.l*0.68);x.stroke();
-    });
+    const flying=crashSrv.phase==="flying";
+    draw3DSky(x,w,h,flying);
 
     const m=Number(crashSrv.mult||1);
     if(crashSrv.phase==="waiting"){
       const targetRem=Math.max(0,Number(crashSrv.remaining||0));
       smoothRem+=(targetRem-smoothRem)*0.18;
       if(Math.abs(targetRem-smoothRem)>2)smoothRem=targetRem;
-      const cx=w*0.5,cy=h*0.42,rad=44,ang=-Math.PI/2+(smoothRem/8)*Math.PI*2;
+      const cx=w*0.5,cy=h*0.48,rad=44,ang=-Math.PI/2+(smoothRem/8)*Math.PI*2;
       x.strokeStyle="rgba(255,255,255,.12)";x.lineWidth=6;x.beginPath();x.arc(cx,cy,rad,0,Math.PI*2);x.stroke();
       x.strokeStyle="#10b981";x.lineWidth=6;x.lineCap="round";x.beginPath();x.arc(cx,cy,rad,-Math.PI/2,ang);x.stroke();
       x.fillStyle="#fff";x.beginPath();x.arc(cx+Math.cos(ang)*rad,cy+Math.sin(ang)*rad,4.5,0,Math.PI*2);x.fill();
       x.fillStyle="#fff";x.font="900 34px sans-serif";x.textAlign="center";x.fillText(Math.max(1,Math.ceil(smoothRem)),cx,cy+12);
-      paraX=w*0.5;paraY=h*0.48;
-    }else if(crashSrv.phase==="flying"){
+      paraX=w*0.5;paraY=h*0.52;
+    }else if(flying){
       let zone=-1;
       if(m>=1.30&&m<=2.10)zone=1;else if(m>=3.50&&m<=5.20)zone=2;else if(m>=8.00&&m<=11.0)zone=3;
       if(zone!==-1&&zone!==lastShakeZone){lastShakeZone=zone;shakePhase=75;vib("heavy");}
@@ -627,7 +648,7 @@ function drawClouds(x,w,h){
       const jx=isShaking?(Math.random()*9-4.5):0,jy=isShaking?(Math.random()*9-4.5):0;
 
       const prog=Math.min(1,(m-1)/2.2);
-      const rx=w*0.46+prog*26+Math.sin(Date.now()/360)*4,ry=h*0.62-prog*28+Math.cos(Date.now()/300)*4;
+      const rx=w*0.46+prog*26+Math.sin(Date.now()/360)*4,ry=h*0.64-prog*28+Math.cos(Date.now()/300)*4;
       paraX=rx;paraY=ry;
 
       for(let k=0;k<2;k++)flames.push({x:rx-36+jx,y:ry+34+jy,vx:-2.6-Math.random()*1.8,vy:1.8+Math.random()*1.4,r:10+Math.random()*8,a:0.95,smoke:Math.random()<0.42});
@@ -650,25 +671,17 @@ function drawClouds(x,w,h){
       x.fillStyle=isShaking?"#fb923c":"#fff";x.font="900 40px sans-serif";x.textAlign="center";
       x.fillText(m.toFixed(2).replace(".",",")+"×",w*0.5,48);
     }else{
-      paraY=Math.min(h-56,paraY+0.65);
-      const tNow=Date.now(),sway=Math.sin(tNow/320)*12,tilt=Math.sin(tNow/320)*0.16;
+      paraY=Math.min(h-68,paraY+0.65);
+      const tNow=Date.now(),sway=Math.sin(tNow/340)*11,tilt=Math.sin(tNow/340)*0.12;
       x.save();x.translate(paraX+sway,paraY);x.rotate(tilt);
-      const cg=x.createRadialGradient(-10,-62,6,0,-44,46);
-      cg.addColorStop(0,"#fef08a");cg.addColorStop(0.55,"#f59e0b");cg.addColorStop(1,"#b45309");
-      x.fillStyle=cg;x.beginPath();x.arc(0,-42,42,Math.PI,0);x.closePath();x.fill();
-      x.fillStyle="rgba(255,255,255,.85)";x.beginPath();x.arc(0,-42,42,Math.PI*1.35,Math.PI*1.65);x.lineTo(0,-42);x.closePath();x.fill();
-      x.strokeStyle="#78350f";x.lineWidth=2;x.beginPath();x.arc(0,-42,42,Math.PI,0);x.stroke();
-      x.strokeStyle="rgba(226,232,240,.85)";x.lineWidth=1.4;
-      Array(-38,-22,-8,8,22,38).forEach(dx=>{x.beginPath();x.moveTo(dx,-42);x.lineTo(dx*0.18,-4);x.stroke();});
-      x.fillStyle="#334155";x.beginPath();x.roundRect(-12,-8,24,14,4);x.fill();
-      if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,-27,-4,54,54);
-      else{x.font="36px serif";x.textAlign="center";x.fillText("🐊",0,28);}
+      x.shadowColor="rgba(250,204,21,.35)";x.shadowBlur=20;
+      if(paraImg.complete&&paraImg.naturalWidth>0)x.drawImage(paraImg,-62,-62,124,124);
+      else if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,-27,-27,54,54);
       x.restore();
 
       x.fillStyle="#f87171";x.font="900 32px sans-serif";x.textAlign="center";
-      x.fillText(m.toFixed(2).replace(".",",")+"× · Улетела!",w*0.5,44);
+      x.fillText(m.toFixed(2).replace(".",",")+"× · Улетела!",w*0.5,42);
     }
-    drawClouds(x,w,h);
 
     flyBadges.forEach(b=>{
       b.y+=b.vy;b.x-=0.35;b.a-=0.008;
@@ -686,9 +699,10 @@ function drawClouds(x,w,h){
   requestAnimationFrame(loopSpace);
 })();
 
- /* === ТРАССА (RUBUP: СВАЙП НА 30 ШАГОВ + ДЕРЕВЬЯ + КРУПНЫЕ 3D-МАШИНЫ + ЖИВОЙ КРОКОДИЛ) === */
+
+ /* === ТРАССА (RUBUP: ЧИСТЫЙ ТРОТУАР С НАДПИСЬЮ ZETUP МЕЛКАМИ + СПОКОЙНЫЙ ТРАФИК) === */
 let rAct=false,rStep=0,rDiff=1,rBet=0,rCrash=false,rCamX=0,rCamTarget=0,rDrag=false,rDragX=0,rDragStart=0,rHop=0,rCCar=null,rSparks=Array();
-const rCars=Array.from({length:30},(_,i)=>({lane:i,y:-100-(i%5)*70,sp:2.2+(i%4)*0.45,type:i%3}));
+const rCars=Array.from({length:30},(_,i)=>({lane:i,y:-140-(i*190)%950,sp:1.7+(i%3)*0.35,type:i%3,active:(i%2===0)}));
 function rMult(d,s){if(s<=0)return 1;const b=d===0?1.19:(d===1?1.35:(d===2?1.58:1.95));return +(Math.pow(b,s).toFixed(2));}
 function setRD(d,el){if(rAct)return;rDiff=d;vib();document.querySelectorAll("#rDiffRow .qbtn").forEach(b=>b.classList.remove("active"));el.classList.add("active");updRUI();}
 function updRUI(){
@@ -712,8 +726,8 @@ function stepRoad(){
   for(let k=0;k<10;k++)rSparks.push({x:tx,y:196,vx:(Math.random()-0.5)*5,vy:-Math.random()*3.5-1,a:1});
   const prob=rDiff===0?0.18:(rDiff===1?0.28:(rDiff===2?0.38:0.50));
   if(Math.random()<prob){
-    rCrash=true;rAct=false;rStep=ns;focusRoadCam();rCCar={lane:ns-1,y:-105,sp:14,type:0};vib("heavy");
-    setTimeout(()=>{showToast("💥 Машина сбила крокодила!");updRUI();},400);
+    rCrash=true;rAct=false;rStep=ns;focusRoadCam();rCCar={lane:ns-1,y:-110,sp:13,type:0,active:true};vib("heavy");
+    setTimeout(()=>{showToast("💥 Машина сбила крокодила!");updRUI();},450);
   }else{
     rStep=ns;focusRoadCam();updRUI();
     if(rStep>=30){showToast("🏆 Все 30 шагов пройдены!");roadCash();}
@@ -730,19 +744,39 @@ async function roadCash(){
   try{const res=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});setBal(res.balance,res.total_deposited);vib("ok");showToast("Забрано +"+win+" ⭐!");}catch(e){}
 }
 function rr(x,px,py,w,h,r){x.beginPath();x.roundRect(px,py,w,h,r);}
-function draw3DTree(x,tx,ty){
-  x.fillStyle="rgba(0,0,0,.42)";x.beginPath();x.ellipse(tx+5,ty+24,26,11,0,0,Math.PI*2);x.fill();
-  x.fillStyle="#78350f";rr(x,tx-5,ty+4,10,20,3);x.fill();
-  const layers=Array({dx:0,dy:2,r:24,c1:"#166534",c2:"#052e16"},{dx:-10,dy:-6,r:17,c1:"#22c55e",c2:"#14532d"},{dx:10,dy:-5,r:16,c1:"#16a34a",c2:"#14532d"},{dx:0,dy:-13,r:18,c1:"#4ade80",c2:"#15803d"});
-  layers.forEach(p=>{
-    const g=x.createRadialGradient(tx+p.dx-4,ty+p.dy-5,3,tx+p.dx,ty+p.dy,p.r);
-    g.addColorStop(0,p.c1);g.addColorStop(1,p.c2);
-    x.fillStyle=g;x.beginPath();x.arc(tx+p.dx,ty+p.dy,p.r,0,Math.PI*2);x.fill();
+
+function drawChalkArt(x,sx){
+  x.save();
+  x.shadowColor="rgba(255,255,255,.25)";x.shadowBlur=4;
+  // Разноцветная надпись ZetUp мелками на тротуаре
+  const letters=Array(
+    {ch:"Z",c:"#38bdf8",x:16,y:56,rot:-0.12},
+    {ch:"e",c:"#f472b6",x:35,y:58,rot:0.08},
+    {ch:"t",c:"#facc15",x:52,y:55,rot:-0.06},
+    {ch:"U",c:"#4ade80",x:24,y:106,rot:-0.08},
+    {ch:"p",c:"#fb923c",x:46,y:108,rot:0.1}
+  );
+  letters.forEach(lt=>{
+    x.save();x.translate(sx+lt.x,lt.y);x.rotate(lt.rot);
+    x.fillStyle=lt.c;x.font="900 28px 'Comic Sans MS',cursive,sans-serif";
+    x.fillText(lt.ch,0,0);
+    x.strokeStyle="rgba(255,255,255,.55)";x.lineWidth=1;x.strokeText(lt.ch,0,0);
+    x.restore();
   });
+  // Звёздочки и волнистая линия мелком
+  x.strokeStyle="#fde047";x.lineWidth=2.2;x.setLineDash(Array(4,3));
+  x.beginPath();x.moveTo(sx+12,122);x.quadraticCurveTo(sx+42,114,sx+72,122);x.stroke();
+  x.setLineDash(Array());
+  x.fillStyle="#f472b6";x.font="bold 14px sans-serif";x.fillText("★",sx+62,40);
+  x.fillStyle="#38bdf8";x.font="bold 13px sans-serif";x.fillText("✦",sx+14,148);
+  x.fillStyle="#4ade80";x.font="bold 15px sans-serif";x.fillText("★",sx+54,174);
+  x.fillStyle="#facc15";x.font="bold 12px sans-serif";x.fillText("✦",sx+24,204);
+  x.restore();
 }
-function draw25DCar(x,c,offX){
+
+function draw25DCar(x,c,offX,braking){
   const cx=138+c.lane*78-offX-28,y=c.y,w=56,h=c.type===1?98:88;
-  if(cx+w<82||cx>398)return;
+  if(cx+w<75||cx>405)return;
   x.save();
   const g=x.createLinearGradient(0,y+h,0,y+h+40);
   g.addColorStop(0,"rgba(254,240,138,.42)");g.addColorStop(1,"rgba(254,240,138,0)");
@@ -763,6 +797,11 @@ function draw25DCar(x,c,offX){
   x.fillStyle="#090d16";rr(x,cx+16,y+h-6,w-32,5,2);x.fill();
   if(c.type===0){x.fillStyle="#facc15";x.beginPath();x.arc(cx+w/2,y+h-10,3,0,Math.PI*2);x.fill();}
   x.fillStyle="#fef9c3";rr(x,cx+5,y+h-9,12,6,2);x.fill();rr(x,cx+w-17,y+h-9,12,6,2);x.fill();
+  if(braking){
+    x.fillStyle="#ef4444";x.shadowColor="#ef4444";x.shadowBlur=10;
+    rr(x,cx+6,y+1,11,4,2);x.fill();rr(x,cx+w-17,y+1,11,4,2);x.fill();
+    x.shadowBlur=0;
+  }
   if(c.type===1){
     x.fillStyle="#7c2d12";x.font="900 7.5px sans-serif";x.textAlign="center";
     x.fillText("Free",cx+w/2,y+h-34);x.fillText("Hot Dogs",cx+w/2,y+h-25);
@@ -780,7 +819,6 @@ function draw25DCar(x,c,offX){
     const x=cv.getContext("2d"),w=cv.width,h=cv.height;
     rCamX+=(rCamTarget-rCamX)*0.22;
     x.clearRect(0,0,w,h);
-    // Спокойный тёмный фон дороги, чтобы машины и крокодил сияли на первом плане
     x.fillStyle="#111624";x.fillRect(0,0,w,h);
     for(let l=0;l<30;l++){
       const lx=99+l*78-rCamX;
@@ -800,29 +838,28 @@ function draw25DCar(x,c,offX){
       }
     }
 
-    // Тротуар с пышными 3D-деревьями, тележкой Free Hot Dogs и знаком с крокодилом
+    // Чистый тротуар с разноцветной надписью ZetUp мелками
     const sx=-rCamX;
     if(sx>-100){
       x.fillStyle="#475569";x.fillRect(sx,0,94,h);
-      for(let py=2;py<h;py+=44){x.fillStyle="#64748b";rr(x,sx+3,py,80,40,4);x.fill();x.strokeStyle="#334155";x.lineWidth=1.5;x.stroke();}
+      for(let py=2;py<h;py+=44){x.fillStyle="#5a697e";rr(x,sx+3,py,80,40,4);x.fill();x.strokeStyle="#334155";x.lineWidth=1.5;x.stroke();}
       x.fillStyle="#94a3b8";x.fillRect(sx+86,0,8,h);x.fillStyle="#1e293b";x.fillRect(sx+92,0,3,h);
-      draw3DTree(x,sx+42,26);
-      x.fillStyle="rgba(0,0,0,.38)";rr(x,sx+12,84,58,42,8);x.fill();
-      x.fillStyle="#cbd5e1";x.strokeStyle="#1e293b";x.lineWidth=2;rr(x,sx+10,80,56,40,8);x.fill();x.stroke();
-      x.fillStyle="#ef4444";x.fillRect(sx+10,92,56,10);x.fillStyle="#f8fafc";x.fillRect(sx+10,102,56,8);
-      x.fillStyle="#0f172a";x.font="900 7px sans-serif";x.textAlign="center";x.fillText("Free Hot Dogs",sx+38,118);
-      draw3DTree(x,sx+40,154);
-      x.fillStyle="#fff";x.beginPath();x.arc(sx+46,h-44,21,0,Math.PI*2);x.fill();
-      x.strokeStyle="#ef4444";x.lineWidth=4.5;x.stroke();
-      if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,sx+32,h-58,28,28);
-      x.strokeStyle="#ef4444";x.lineWidth=4;x.beginPath();x.moveTo(sx+31,h-59);x.lineTo(sx+61,h-29);x.stroke();
+      drawChalkArt(x,sx);
     }
 
-    // Главные герои: крупные глянцевые 3D-машины
-    rCars.forEach(c=>{if(!rCrash||c.lane!==rStep-1){c.y+=c.sp;if(c.y>h+105)c.y=-105;if(rAct&&c.lane===rStep&&Math.abs(c.y-160)<68)c.y=-105;draw25DCar(x,c,rCamX);}});
-    if(rCCar){rCCar.y+=rCCar.sp;draw25DCar(x,rCCar,rCamX);}
+    // Спокойный трафик: машины проезжают до самого низа экрана (h+110) и тормозят перед пройденными люками
+    rCars.forEach(c=>{
+      if(!c.active)return;
+      if(rCrash&&c.lane===rStep-1)return;
+      const safeLane=rAct&&c.lane<rStep;
+      let braking=false;
+      if(safeLane&&c.y>=34&&c.y<=64){braking=true;}
+      else{c.y+=c.sp;if(c.y>h+115)c.y=-140-Math.random()*220;}
+      draw25DCar(x,c,rCamX,braking);
+    });
+    if(rCCar){if(rCCar.y<h+115)rCCar.y+=rCCar.sp;draw25DCar(x,rCCar,rCamX,false);}
 
-    // Главный герой: сочный живой анимированный крокодил
+    // Живой анимированный крокодил
     const targetX=(rStep===0?46:(138+(rStep-1)*78))-rCamX;
     if(rHop>0)rHop*=0.78;
     const tNow=Date.now(),breath=Math.sin(tNow/200)*0.055,wiggle=Math.sin(tNow/260)*0.07,cy=156-rHop;
@@ -833,18 +870,7 @@ function draw25DCar(x,c,offX){
     else{x.font="42px serif";x.textAlign="center";x.fillText("🐊",0,14);}
     x.restore();
 
-    rSparks.forEach(sp=>{sp.x+=sp.vx;sp.y+=sp.vy;sp.vy+=0.25;sp.a-=0.05;if(sp.a>0){x.fillStyle=`rgba(250,204,21,${sp.a})`;x.beginPath();x.arc(sp.x-rCamX,sp.y,3.5,0,Math.PI*2);x.fill();}});
-    rSparks=rSparks.filter(sp=>sp.a>0);
-    if(rCrash){x.fillStyle="rgba(239,68,68,.9)";x.beginPath();x.arc(targetX,cy+26,30,0,Math.PI*2);x.fill();x.fillStyle="#fff";x.font="900 20px sans-serif";x.textAlign="center";x.fillText("💥",targetX,cy+33);}
-    else if(rAct&&rStep>0){
-      const curWin=(rBet*rMult(rDiff,rStep)).toFixed(2)+" ⭐";
-      x.fillStyle="#10b981";rr(x,targetX-38,cy-30,76,22,8);x.fill();
-      x.fillStyle="#052e16";x.font="900 11px sans-serif";x.textAlign="center";x.fillText(curWin,targetX,cy-15);
-    }
-    x.fillStyle="rgba(148,163,184,.75)";x.font="700 10px sans-serif";x.textAlign="right";x.fillText("← Листай дорогу пальцем →",w-10,16);
-  }
-  requestAnimationFrame(loopR);
-})();
+
 
 
 /* === МИНЫ RUBUP (3-24 + ЛЕНТА ИКСОВ) === */
