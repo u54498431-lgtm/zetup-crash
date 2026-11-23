@@ -385,7 +385,8 @@ input,select{width:100%;background:transparent;border:none;color:#fff;font-size:
   </div>
 </div>
 <script>
-window.onerror = function(m, u, l) { alert("Ошибка на строке " + l + ": " + m); };
+window.onerror = function(m, u, l) { if(!window._err){ window._err=1; document.body.insertAdjacentHTML("afterbegin", "<div style='position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;padding:12px;font-weight:900;font-size:13px;'>СТРОКА " + l + ": " + m + "</div>"); } };
+
 </script>
 
 
