@@ -880,11 +880,10 @@ function draw25DCar(x,c,offX,braking){
       x.fillStyle="#052e16";x.font="900 11px sans-serif";x.textAlign="center";x.fillText(curWin,targetX,cy-15);
     }
     x.fillStyle="rgba(148,163,184,.75)";x.font="700 10px sans-serif";x.textAlign="right";x.fillText("← Листай дорогу пальцем →",w-10,16);
-  }
-  requestAnimationFrame(loopR);
+    }
+}
+requestAnimationFrame(loopR);
 })();
-
-
 
 /* === МИНЫ RUBUP (3-24 + ЛЕНТА ИКСОВ) === */
 let mCnt=3,mAct=false,mBet=0,mMap=Array(),mOp=0,mMult=1;
