@@ -686,9 +686,9 @@ function drawClouds(x,w,h){
   requestAnimationFrame(loopSpace);
 })();
 
-      /* === ТРАССА (RUBUP: 3D-КУСТЫ + ЗНАК С КРОКОДИЛОМ + ГЛЯНЦЕВЫЕ 3D-МАШИНЫ + ЖИВОЙ КРОКОДИЛ) === */
-let rAct=false,rStep=0,rDiff=1,rBet=0,rCrash=false,rScr=0,rCX=46,rTX=46,rLane=-1,rCCar=null,rHop=0,rSparks=Array();
-const rCars=Array({lane:0,y:-90,sp:2.3,type:0},{lane:1,y:-230,sp:2.9,type:1},{lane:2,y:-155,sp:3.5,type:2});
+ /* === ТРАССА (RUBUP: СВАЙП НА 30 ШАГОВ + ДЕРЕВЬЯ + КРУПНЫЕ 3D-МАШИНЫ + ЖИВОЙ КРОКОДИЛ) === */
+let rAct=false,rStep=0,rDiff=1,rBet=0,rCrash=false,rCamX=0,rCamTarget=0,rDrag=false,rDragX=0,rDragStart=0,rHop=0,rCCar=null,rSparks=Array();
+const rCars=Array.from({length:30},(_,i)=>({lane:i,y:-100-(i%5)*70,sp:2.2+(i%4)*0.45,type:i%3}));
 function rMult(d,s){if(s<=0)return 1;const b=d===0?1.19:(d===1?1.35:(d===2?1.58:1.95));return +(Math.pow(b,s).toFixed(2));}
 function setRD(d,el){if(rAct)return;rDiff=d;vib();document.querySelectorAll("#rDiffRow .qbtn").forEach(b=>b.classList.remove("active"));el.classList.add("active");updRUI();}
 function updRUI(){
@@ -698,77 +698,79 @@ function updRUI(){
   if(!rAct){b.style.display="block";b.textContent="Начать игру";cb.style.display="none";}
   else{b.style.display="block";b.textContent="Шаг вперёд ("+(rStep+1)+"/30) →";cb.style.display=rStep>0?"block":"none";cb.textContent="Забрать "+curWin.toFixed(2)+" ⭐";}
 }
+function focusRoadCam(){rCamTarget=Math.max(0,Math.min(30*78-220,(rStep-1)*78));}
 async function roadAct(){
   if(!rAct){
     const v=+(document.getElementById("rBetInp").value||10);if(v<1)return showToast("Минимум 1 ⭐");
-    try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});setBal(d.balance,d.total_deposited);addCashback(v);vib();rAct=true;rCrash=false;rStep=0;rBet=v;rLane=-1;rCX=46;rTX=46;rCCar=null;rSparks=Array();updRUI();}catch(e){showToast(e.message);}
+    try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});setBal(d.balance,d.total_deposited);addCashback(v);vib();rAct=true;rCrash=false;rStep=0;rBet=v;rCCar=null;rSparks=Array();rCamTarget=0;updRUI();}catch(e){showToast(e.message);}
   }else stepRoad();
 }
 function stepRoad(){
   if(!rAct||rCrash)return;
-  const ns=rStep+1,nl=(ns-1)%3;
-  rLane=nl;rTX=148+nl*82;rScr+=68;rHop=18;vib();
-  for(let k=0;k<8;k++)rSparks.push({x:rTX,y:196,vx:(Math.random()-0.5)*4,vy:-Math.random()*3-1,a:1});
+  const ns=rStep+1;rHop=24;vib();focusRoadCam();
+  const tx=138+(ns-1)*78;
+  for(let k=0;k<10;k++)rSparks.push({x:tx,y:196,vx:(Math.random()-0.5)*5,vy:-Math.random()*3.5-1,a:1});
   const prob=rDiff===0?0.18:(rDiff===1?0.28:(rDiff===2?0.38:0.50));
   if(Math.random()<prob){
-    rCrash=true;rAct=false;rCCar={lane:nl,y:-100,sp:14,type:0};vib("heavy");
+    rCrash=true;rAct=false;rStep=ns;focusRoadCam();rCCar={lane:ns-1,y:-105,sp:14,type:0};vib("heavy");
     setTimeout(()=>{showToast("💥 Машина сбила крокодила!");updRUI();},400);
   }else{
-    rStep=ns;updRUI();
+    rStep=ns;focusRoadCam();updRUI();
     if(rStep>=30){showToast("🏆 Все 30 шагов пройдены!");roadCash();}
   }
 }
-document.getElementById("cvRoad").onclick=stepRoad;
+const cvR=document.getElementById("cvRoad");
+cvR.addEventListener("pointerdown",e=>{rDrag=true;rDragStart=e.clientX;rDragX=e.clientX;});
+cvR.addEventListener("pointermove",e=>{if(!rDrag)return;const dx=e.clientX-rDragX;rDragX=e.clientX;rCamTarget=Math.max(0,Math.min(30*78-220,rCamTarget-dx*1.25));});
+cvR.addEventListener("pointerup",e=>{if(rDrag&&Math.abs(e.clientX-rDragStart)<8)stepRoad();rDrag=false;});
+
 async function roadCash(){
   if(!rAct||rStep===0||rCrash)return;
   const win=+(rBet*rMult(rDiff,rStep)).toFixed(2);rAct=false;updRUI();
   try{const res=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});setBal(res.balance,res.total_deposited);vib("ok");showToast("Забрано +"+win+" ⭐!");}catch(e){}
 }
 function rr(x,px,py,w,h,r){x.beginPath();x.roundRect(px,py,w,h,r);}
-function draw3DBush(x,bx,by){
-  x.fillStyle="rgba(0,0,0,.35)";x.beginPath();x.ellipse(bx+3,by+12,24,10,0,0,Math.PI*2);x.fill();
-  Array({dx:-10,dy:2,r:15,c:"#14532d"},{dx:10,dy:3,r:14,c:"#166534"},{dx:0,dy:-5,r:18,c:"#15803d"},{dx:-5,dy:-8,r:11,c:"#22c55e"}).forEach(p=>{
-    x.fillStyle=p.c;x.strokeStyle="#052e16";x.lineWidth=2;x.beginPath();x.arc(bx+p.dx,by+p.dy,p.r,0,Math.PI*2);x.fill();x.stroke();
+function draw3DTree(x,tx,ty){
+  x.fillStyle="rgba(0,0,0,.42)";x.beginPath();x.ellipse(tx+5,ty+24,26,11,0,0,Math.PI*2);x.fill();
+  x.fillStyle="#78350f";rr(x,tx-5,ty+4,10,20,3);x.fill();
+  const layers=Array({dx:0,dy:2,r:24,c1:"#166534",c2:"#052e16"},{dx:-10,dy:-6,r:17,c1:"#22c55e",c2:"#14532d"},{dx:10,dy:-5,r:16,c1:"#16a34a",c2:"#14532d"},{dx:0,dy:-13,r:18,c1:"#4ade80",c2:"#15803d"});
+  layers.forEach(p=>{
+    const g=x.createRadialGradient(tx+p.dx-4,ty+p.dy-5,3,tx+p.dx,ty+p.dy,p.r);
+    g.addColorStop(0,p.c1);g.addColorStop(1,p.c2);
+    x.fillStyle=g;x.beginPath();x.arc(tx+p.dx,ty+p.dy,p.r,0,Math.PI*2);x.fill();
   });
 }
-function draw25DCar(x,c){
-  const cx=148+c.lane*82-27,y=c.y,w=54,h=c.type===1?96:84;
+function draw25DCar(x,c,offX){
+  const cx=138+c.lane*78-offX-28,y=c.y,w=56,h=c.type===1?98:88;
+  if(cx+w<82||cx>398)return;
   x.save();
-  // Конусы света фар на дороге
-  const g=x.createLinearGradient(0,y+h,0,y+h+38);
-  g.addColorStop(0,"rgba(254,240,138,.36)");g.addColorStop(1,"rgba(254,240,138,0)");
-  x.fillStyle=g;x.beginPath();x.moveTo(cx+6,y+h);x.lineTo(cx-6,y+h+38);x.lineTo(cx+w+6,y+h+38);x.lineTo(cx+w-6,y+h);x.closePath();x.fill();
-  // Объёмная тень
-  x.fillStyle="rgba(0,0,0,.52)";rr(x,cx+5,y+7,w,h,16);x.fill();
-  // Колёса и зеркала
+  const g=x.createLinearGradient(0,y+h,0,y+h+40);
+  g.addColorStop(0,"rgba(254,240,138,.42)");g.addColorStop(1,"rgba(254,240,138,0)");
+  x.fillStyle=g;x.beginPath();x.moveTo(cx+7,y+h);x.lineTo(cx-6,y+h+40);x.lineTo(cx+w+6,y+h+40);x.lineTo(cx+w-7,y+h);x.closePath();x.fill();
+  x.fillStyle="rgba(0,0,0,.58)";rr(x,cx+5,y+7,w,h,16);x.fill();
   x.fillStyle="#090d16";
-  rr(x,cx-4,y+17,6,16,3);x.fill();rr(x,cx+w-2,y+17,6,16,3);x.fill();
-  rr(x,cx-4,y+h-28,6,16,3);x.fill();rr(x,cx+w-2,y+h-28,6,16,3);x.fill();
-  // Градиентный симметричный кузов
+  rr(x,cx-5,y+17,7,17,3);x.fill();rr(x,cx+w-2,y+17,7,17,3);x.fill();
+  rr(x,cx-5,y+h-29,7,17,3);x.fill();rr(x,cx+w-2,y+h-29,7,17,3);x.fill();
   const cg=x.createLinearGradient(cx,y,cx+w,y);
-  if(c.type===0){cg.addColorStop(0,"#0f172a");cg.addColorStop(0.5,"#334155");cg.addColorStop(1,"#0f172a");}
-  else if(c.type===1){cg.addColorStop(0,"#c2410c");cg.addColorStop(0.5,"#fb923c");cg.addColorStop(1,"#c2410c");}
-  else{cg.addColorStop(0,"#ca8a04");cg.addColorStop(0.5,"#fde047");cg.addColorStop(1,"#ca8a04");}
+  if(c.type===0){cg.addColorStop(0,"#090d16");cg.addColorStop(0.5,"#334155");cg.addColorStop(1,"#090d16");}
+  else if(c.type===1){cg.addColorStop(0,"#9a3412");cg.addColorStop(0.5,"#fb923c");cg.addColorStop(1,"#9a3412");}
+  else{cg.addColorStop(0,"#a16207");cg.addColorStop(0.5,"#fde047");cg.addColorStop(1,"#a16207");}
   x.fillStyle=cg;x.strokeStyle="#090d16";x.lineWidth=2.5;rr(x,cx,y,w,h,15);x.fill();x.stroke();
-  // Крыша и кабина
   x.fillStyle=c.type===0?"#1e293b":(c.type===1?"#fdba74":"#fef9c3");
-  rr(x,cx+7,y+11,w-14,h-38,10);x.fill();x.stroke();
-  // Лобовое стекло с глянцевым бликом
-  x.fillStyle="#090d16";rr(x,cx+8,y+h-28,w-16,16,6);x.fill();
-  x.fillStyle="rgba(186,230,253,.45)";rr(x,cx+11,y+h-25,15,5,2);x.fill();
-  // Решётка радиатора, золотая эмблема и яркие диодные фары
-  x.fillStyle="#090d16";rr(x,cx+15,y+h-6,w-30,5,2);x.fill();
-  if(c.type===0){x.fillStyle="#facc15";x.beginPath();x.arc(cx+w/2,y+h-9,2.5,0,Math.PI*2);x.fill();}
-  x.fillStyle="#fef9c3";rr(x,cx+5,y+h-8,11,5,2);x.fill();rr(x,cx+w-16,y+h-8,11,5,2);x.fill();
-  // Детали фургона Free Hot Dogs
+  rr(x,cx+8,y+11,w-16,h-39,10);x.fill();x.stroke();
+  x.fillStyle="#090d16";rr(x,cx+9,y+h-29,w-18,17,6);x.fill();
+  x.fillStyle="rgba(186,230,253,.52)";rr(x,cx+12,y+h-26,16,5,2);x.fill();
+  x.fillStyle="#090d16";rr(x,cx+16,y+h-6,w-32,5,2);x.fill();
+  if(c.type===0){x.fillStyle="#facc15";x.beginPath();x.arc(cx+w/2,y+h-10,3,0,Math.PI*2);x.fill();}
+  x.fillStyle="#fef9c3";rr(x,cx+5,y+h-9,12,6,2);x.fill();rr(x,cx+w-17,y+h-9,12,6,2);x.fill();
   if(c.type===1){
-    x.fillStyle="#7c2d12";x.font="900 7px sans-serif";x.textAlign="center";
-    x.fillText("Free",cx+w/2,y+h-33);x.fillText("Hot Dogs",cx+w/2,y+h-25);
-    x.fillStyle="#b45309";rr(x,cx+16,y+14,22,32,10);x.fill();
-    x.fillStyle="#dc2626";rr(x,cx+20,y+12,14,36,7);x.fill();
-    x.strokeStyle="#facc15";x.lineWidth=2.2;x.beginPath();x.moveTo(cx+27,y+15);x.lineTo(cx+24,y+23);x.lineTo(cx+29,y+31);x.lineTo(cx+26,y+42);x.stroke();
+    x.fillStyle="#7c2d12";x.font="900 7.5px sans-serif";x.textAlign="center";
+    x.fillText("Free",cx+w/2,y+h-34);x.fillText("Hot Dogs",cx+w/2,y+h-25);
+    x.fillStyle="#b45309";rr(x,cx+17,y+14,22,33,10);x.fill();
+    x.fillStyle="#dc2626";rr(x,cx+21,y+12,14,37,7);x.fill();
+    x.strokeStyle="#facc15";x.lineWidth=2.2;x.beginPath();x.moveTo(cx+28,y+15);x.lineTo(cx+25,y+24);x.lineTo(cx+30,y+32);x.lineTo(cx+27,y+43);x.stroke();
   }else if(c.type===2){
-    x.fillStyle="#090d16";rr(x,cx+18,y+25,18,7,2);x.fill();x.fillStyle="#facc15";x.fillRect(cx+22,y+27,10,3);
+    x.fillStyle="#090d16";rr(x,cx+19,y+26,18,7,2);x.fill();x.fillStyle="#facc15";x.fillRect(cx+23,y+28,10,3);
   }
   x.restore();
 }
@@ -776,76 +778,74 @@ function draw25DCar(x,c){
   const cv=document.getElementById("cvRoad");
   if(cv&&document.getElementById("p-road").classList.contains("active")){
     const x=cv.getContext("2d"),w=cv.width,h=cv.height;
+    rCamX+=(rCamTarget-rCamX)*0.22;
     x.clearRect(0,0,w,h);
-    // Рельефный тротуар и гранитный бордюр слева
-    x.fillStyle="#64748b";x.fillRect(0,0,94,h);
-    for(let py=(rScr%44)-44;py<h;py+=44){
-      x.fillStyle="#78879b";rr(x,3,py+2,80,40,4);x.fill();
-      x.strokeStyle="#475569";x.lineWidth=1.5;x.stroke();
-    }
-    x.fillStyle="#94a3b8";x.fillRect(86,0,8,h);x.fillStyle="#334155";x.fillRect(92,0,3,h);
-
-    // 3D-куст сверху
-    draw3DBush(x,38,34);
-    // Детализированная тележка Free Hot Dogs с полосатым зонтиком
-    x.fillStyle="rgba(0,0,0,.35)";rr(x,12,84,56,42,8);x.fill();
-    x.fillStyle="#cbd5e1";x.strokeStyle="#1e293b";x.lineWidth=2;rr(x,10,80,54,40,8);x.fill();x.stroke();
-    x.fillStyle="#ef4444";x.fillRect(10,92,54,10);x.fillStyle="#f8fafc";x.fillRect(10,102,54,8);
-    x.fillStyle="#0f172a";x.font="900 7px sans-serif";x.textAlign="center";x.fillText("Free Hot Dogs",37,118);
-    // Второй 3D-куст и круглый знак с крокодилом
-    draw3DBush(x,36,162);
-    x.fillStyle="#fff";x.beginPath();x.arc(46,h-48,22,0,Math.PI*2);x.fill();
-    x.strokeStyle="#ef4444";x.lineWidth=4.5;x.stroke();
-    if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,32,h-62,28,28);
-    x.strokeStyle="#ef4444";x.lineWidth=4;x.beginPath();x.moveTo(31,h-63);x.lineTo(61,h-33);x.stroke();
-
-    // Глубокий 3D-асфальт и разметка полос
-    x.fillStyle="#151b2b";x.fillRect(95,0,w-95,h);
-    x.strokeStyle="rgba(250,204,21,.22)";x.lineWidth=2;x.beginPath();x.moveTo(99,0);x.lineTo(99,h);x.stroke();
-    x.strokeStyle="rgba(148,163,184,.38)";x.lineWidth=3.5;x.setLineDash(Array(18,16));x.lineDashOffset=-rScr;
-    Array(189,271).forEach(lx=>{x.beginPath();x.moveTo(lx,0);x.lineTo(lx,h);x.stroke();});x.setLineDash(Array());
-
-    // Рельефные чугунные люки и капсулы множителей
-    for(let l=0;l<3;l++){
-      const mx=148+l*82,my=196,st=rStep-(rStep%3)+l+1,ok=rAct&&l<(rStep%3);
-      if(st<=30){
-        x.fillStyle="rgba(0,0,0,.4)";x.beginPath();x.arc(mx+2,my+3,26,0,Math.PI*2);x.fill();
-        x.fillStyle=ok?"#1e293b":"#26314a";x.beginPath();x.arc(mx,my,26,0,Math.PI*2);x.fill();
-        x.strokeStyle=ok?"#10b981":"#475569";x.lineWidth=3;x.stroke();
-        if(ok){x.fillStyle="#facc15";x.font="bold 22px sans-serif";x.textAlign="center";x.fillText("★",mx,my+8);}
+    // Спокойный тёмный фон дороги, чтобы машины и крокодил сияли на первом плане
+    x.fillStyle="#111624";x.fillRect(0,0,w,h);
+    for(let l=0;l<30;l++){
+      const lx=99+l*78-rCamX;
+      if(lx>0&&lx<w){x.strokeStyle="rgba(148,163,184,.22)";x.lineWidth=2.5;x.setLineDash(Array(16,16));x.beginPath();x.moveTo(lx,0);x.lineTo(lx,h);x.stroke();x.setLineDash(Array());}
+      const mx=138+l*78-rCamX,my=196,st=l+1,ok=l<rStep&&!(rCrash&&l===rStep-1);
+      if(mx>-35&&mx<w+35){
+        x.fillStyle="rgba(0,0,0,.4)";x.beginPath();x.arc(mx+2,my+3,25,0,Math.PI*2);x.fill();
+        x.fillStyle=ok?"#1e293b":"#212b42";x.beginPath();x.arc(mx,my,25,0,Math.PI*2);x.fill();
+        x.strokeStyle=ok?"#10b981":"#3b486b";x.lineWidth=3;x.stroke();
+        if(ok){x.fillStyle="#facc15";x.font="bold 21px sans-serif";x.textAlign="center";x.fillText("★",mx,my+8);}
         else{
-          x.strokeStyle="#1e293b";x.lineWidth=2;
-          Array(-10,0,10).forEach(dy=>{x.beginPath();x.moveTo(mx-14,my+dy);x.lineTo(mx+14,my+dy);x.stroke();});
-          x.fillStyle="#1e293b";rr(x,mx-26,my+29,52,18,6);x.fill();
-          x.fillStyle="#e2e8f0";x.font="900 10px sans-serif";x.textAlign="center";x.fillText("×"+rMult(rDiff,st).toFixed(2).replace(".",","),mx,my+41);
+          x.strokeStyle="#151c2e";x.lineWidth=2;
+          Array(-9,0,9).forEach(dy=>{x.beginPath();x.moveTo(mx-13,my+dy);x.lineTo(mx+13,my+dy);x.stroke();});
+          x.fillStyle="#1e293b";rr(x,mx-25,my+28,50,18,6);x.fill();
+          x.fillStyle="#e2e8f0";x.font="900 10px sans-serif";x.textAlign="center";x.fillText("×"+rMult(rDiff,st).toFixed(2).replace(".",","),mx,my+40);
         }
       }
     }
 
-    rCars.forEach(c=>{if(!rCrash||c.lane!==rLane){c.y+=c.sp;if(c.y>h+100)c.y=-100;if(rAct&&c.lane===rLane&&Math.abs(c.y-160)<65)c.y=-100;draw25DCar(x,c);}});
-    if(rCCar){rCCar.y+=rCCar.sp;draw25DCar(x,rCCar);}
+    // Тротуар с пышными 3D-деревьями, тележкой Free Hot Dogs и знаком с крокодилом
+    const sx=-rCamX;
+    if(sx>-100){
+      x.fillStyle="#475569";x.fillRect(sx,0,94,h);
+      for(let py=2;py<h;py+=44){x.fillStyle="#64748b";rr(x,sx+3,py,80,40,4);x.fill();x.strokeStyle="#334155";x.lineWidth=1.5;x.stroke();}
+      x.fillStyle="#94a3b8";x.fillRect(sx+86,0,8,h);x.fillStyle="#1e293b";x.fillRect(sx+92,0,3,h);
+      draw3DTree(x,sx+42,26);
+      x.fillStyle="rgba(0,0,0,.38)";rr(x,sx+12,84,58,42,8);x.fill();
+      x.fillStyle="#cbd5e1";x.strokeStyle="#1e293b";x.lineWidth=2;rr(x,sx+10,80,56,40,8);x.fill();x.stroke();
+      x.fillStyle="#ef4444";x.fillRect(sx+10,92,56,10);x.fillStyle="#f8fafc";x.fillRect(sx+10,102,56,8);
+      x.fillStyle="#0f172a";x.font="900 7px sans-serif";x.textAlign="center";x.fillText("Free Hot Dogs",sx+38,118);
+      draw3DTree(x,sx+40,154);
+      x.fillStyle="#fff";x.beginPath();x.arc(sx+46,h-44,21,0,Math.PI*2);x.fill();
+      x.strokeStyle="#ef4444";x.lineWidth=4.5;x.stroke();
+      if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,sx+32,h-58,28,28);
+      x.strokeStyle="#ef4444";x.lineWidth=4;x.beginPath();x.moveTo(sx+31,h-59);x.lineTo(sx+61,h-29);x.stroke();
+    }
 
-    // Живой анимированный крокодил (дыхание + пружинистый прыжок + искры)
-    rCX+=(rTX-rCX)*0.24;if(rHop>0)rHop*=0.80;
-    const breath=Math.sin(Date.now()/220)*0.04,cy=160-rHop;
-    x.fillStyle="rgba(0,0,0,.4)";x.beginPath();x.ellipse(rCX,212,22-rHop*0.4,8,0,0,Math.PI*2);x.fill();
-    x.save();x.translate(rCX,cy+28);x.scale(1-breath+(rHop*0.008),1+breath+(rHop*0.012));
-    if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,-29,-29,58,58);
-    else{x.font="38px serif";x.textAlign="center";x.fillText("🐊",0,12);}
+    // Главные герои: крупные глянцевые 3D-машины
+    rCars.forEach(c=>{if(!rCrash||c.lane!==rStep-1){c.y+=c.sp;if(c.y>h+105)c.y=-105;if(rAct&&c.lane===rStep&&Math.abs(c.y-160)<68)c.y=-105;draw25DCar(x,c,rCamX);}});
+    if(rCCar){rCCar.y+=rCCar.sp;draw25DCar(x,rCCar,rCamX);}
+
+    // Главный герой: сочный живой анимированный крокодил
+    const targetX=(rStep===0?46:(138+(rStep-1)*78))-rCamX;
+    if(rHop>0)rHop*=0.78;
+    const tNow=Date.now(),breath=Math.sin(tNow/200)*0.055,wiggle=Math.sin(tNow/260)*0.07,cy=156-rHop;
+    x.fillStyle="rgba(0,0,0,.48)";x.beginPath();x.ellipse(targetX,213,25-rHop*0.45,9,0,0,Math.PI*2);x.fill();
+    x.save();x.translate(targetX,cy+28);x.rotate(wiggle+(rHop>4?0.12:0));x.scale(1-breath+(rHop*0.01),1+breath+(rHop*0.015));
+    x.shadowColor="rgba(16,185,129,.45)";x.shadowBlur=16;
+    if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,-32,-32,64,64);
+    else{x.font="42px serif";x.textAlign="center";x.fillText("🐊",0,14);}
     x.restore();
 
-    rSparks.forEach(sp=>{sp.x+=sp.vx;sp.y+=sp.vy;sp.vy+=0.25;sp.a-=0.05;if(sp.a>0){x.fillStyle=`rgba(250,204,21,${sp.a})`;x.beginPath();x.arc(sp.x,sp.y,3,0,Math.PI*2);x.fill();}});
+    rSparks.forEach(sp=>{sp.x+=sp.vx;sp.y+=sp.vy;sp.vy+=0.25;sp.a-=0.05;if(sp.a>0){x.fillStyle=`rgba(250,204,21,${sp.a})`;x.beginPath();x.arc(sp.x-rCamX,sp.y,3.5,0,Math.PI*2);x.fill();}});
     rSparks=rSparks.filter(sp=>sp.a>0);
-
-    if(rCrash){x.fillStyle="rgba(239,68,68,.88)";x.beginPath();x.arc(rCX,cy+26,28,0,Math.PI*2);x.fill();x.fillStyle="#fff";x.font="900 18px sans-serif";x.textAlign="center";x.fillText("💥",rCX,cy+32);}
+    if(rCrash){x.fillStyle="rgba(239,68,68,.9)";x.beginPath();x.arc(targetX,cy+26,30,0,Math.PI*2);x.fill();x.fillStyle="#fff";x.font="900 20px sans-serif";x.textAlign="center";x.fillText("💥",targetX,cy+33);}
     else if(rAct&&rStep>0){
       const curWin=(rBet*rMult(rDiff,rStep)).toFixed(2)+" ⭐";
-      x.fillStyle="#10b981";rr(x,rCX-36,cy-26,72,21,7);x.fill();
-      x.fillStyle="#052e16";x.font="900 11px sans-serif";x.textAlign="center";x.fillText(curWin,rCX,cy-12);
+      x.fillStyle="#10b981";rr(x,targetX-38,cy-30,76,22,8);x.fill();
+      x.fillStyle="#052e16";x.font="900 11px sans-serif";x.textAlign="center";x.fillText(curWin,targetX,cy-15);
     }
+    x.fillStyle="rgba(148,163,184,.75)";x.font="700 10px sans-serif";x.textAlign="right";x.fillText("← Листай дорогу пальцем →",w-10,16);
   }
   requestAnimationFrame(loopR);
 })();
+
 
 /* === МИНЫ RUBUP (3-24 + ЛЕНТА ИКСОВ) === */
 let mCnt=3,mAct=false,mBet=0,mMap=Array(),mOp=0,mMult=1;
@@ -868,16 +868,18 @@ function hitM(i,c){if(!mAct||c.classList.contains("open"))return;if(mMap[i]===1)
 
 /* === АПГРЕЙД (КАК В RUBUP: С БАЛАНСА И ИЗ ПОДАРКОВ + НАСТОЯЩАЯ ЛЕНТА LIVE) === */
 const UPG_TARGETS=Array(
-  {id:"bear",n:"Мишка",v:15,img:"IMG_4005.jpeg",real:true},
-  {id:"heart",n:"Сердечко",v:15,img:"IMG_4007.jpeg",real:true},
-  {id:"rose",n:"Роза",v:25,img:"IMG_4013.jpeg",real:true},
-  {id:"bouquet",n:"Букет",v:50,img:"IMG_4011.jpeg",real:true},
-  {id:"cake",n:"Торт",v:73,img:"Tort.png",real:true},
-  {id:"ring",n:"Кольцо",v:100,img:"IMG_4012.jpeg",real:true},
+  {id:"bear",n:"Мишка",v:15,img:"Bear.png",real:true},
+  {id:"heart",n:"Сердечко",v:15,img:"Heart.png",real:true},
+  {id:"gift",n:"Подарок",v:25,img:"Gift.png",real:true},
+  {id:"rose",n:"Роза",v:25,img:"Rose.png",real:true},
+  {id:"cake",n:"Торт",v:50,img:"Cake.png",real:true},
+  {id:"bouquet",n:"Букет",v:50,img:encodeURI("Flover .png"),real:true},
+  {id:"ring",n:"Кольцо",v:100,img:"Ring.png",real:true},
   {id:"nft1",n:"Cyber Gem NFT",v:120,img:"IMG_3825.jpeg",real:false},
   {id:"nft2",n:"Gold Bear NFT",v:150,img:"IMG_3826.jpeg",real:false},
   {id:"nft3",n:"Genesis NFT",v:650,img:"IMG_3829.jpeg",real:false}
 );
+
 let uMode="bal",uSelIdx=0,uAng=0,uSpinning=false,uFast=false;
 let uLiveList=JSON.parse(localStorage.getItem("zetup_ulive")||"[]");
 function renderULive(){
@@ -976,19 +978,21 @@ async function spinUpgrade(){
 }
 /* === КЕЙСЫ RUBUP (3 БОКСА + МИШКА ИЛИ ТОРТ 42 ⭐ + ОБЛОЖКА TORT.PNG) === */
 const CASES={
-  daily:{name:"Подарок дня",sub:"Бесплатно раз в 24 часа",cost:0,img:"IMG_3835.jpeg",items:Array(
-    {n:"Мишка",v:15,ch:1.5,img:"IMG_4005.jpeg",c:"rc-purp",gift:true},
-    {n:"Сердечко",v:15,ch:1.5,img:"IMG_4007.jpeg",c:"rc-purp",gift:true},
-    {n:"Букет",v:50,ch:1.5,img:"IMG_4011.jpeg",c:"rc-red",gift:true},
-    {n:"Кольцо",v:100,ch:1.5,img:"IMG_4012.jpeg",c:"rc-red",gift:true},
-    {n:"Роза",v:25,ch:1.5,img:"IMG_4013.jpeg",c:"rc-blue",gift:true},
-    {n:"10 Звёзд",v:10,ch:9,img:"",ico:"⭐",c:"rc-blue",gift:false},
+  daily:{name:"Подарок дня",sub:"Бесплатно раз в 24 часа",cost:0,img:"Gift.png",items:Array(
+    {n:"Мишка",v:15,ch:1.5,img:"Bear.png",c:"rc-purp",gift:true},
+    {n:"Сердечко",v:15,ch:1.5,img:"Heart.png",c:"rc-purp",gift:true},
+    {n:"Подарок",v:25,ch:1.5,img:"Gift.png",c:"rc-blue",gift:true},
+    {n:"Роза",v:25,ch:1.5,img:"Rose.png",c:"rc-blue",gift:true},
+    {n:"Торт",v:50,ch:1,img:"Cake.png",c:"rc-red",gift:true},
+    {n:"Букет",v:50,ch:1,img:encodeURI("Flover .png"),c:"rc-red",gift:true},
+    {n:"Кольцо",v:100,ch:1,img:"Ring.png",c:"rc-red",gift:true},
+    {n:"10 Звёзд",v:10,ch:8.5,img:"",ico:"⭐",c:"rc-blue",gift:false},
     {n:"3 Звезды",v:3,ch:38.5,img:"",ico:"⭐",c:"rc-green",gift:false},
-    {n:"1 Звезда",v:1,ch:45,img:"",ico:"✨",c:"rc-green",gift:false}
+    {n:"1 Звезда",v:1,ch:44,img:"",ico:"✨",c:"rc-green",gift:false}
   )},
   cake:{name:"Мишка или торт",sub:"25% Торт (73 ⭐) · 75% Мишка (22 ⭐)",cost:42,img:"Tort.png",items:Array(
-    {n:"Торт",v:73,ch:25,img:"Tort.png",c:"rc-red",gift:true},
-    {n:"Мишка",v:22,ch:75,img:"IMG_4005.jpeg",c:"rc-blue",gift:true}
+    {n:"Торт",v:73,ch:25,img:"Cake.png",c:"rc-red",gift:true},
+    {n:"Мишка",v:22,ch:75,img:"Bear.png",c:"rc-blue",gift:true}
   )},
   nft:{name:"Кибер-Кроко (49 ⭐)",sub:"Редкие NFT и звёзды",cost:49,img:encodeURI("Без названия30_20261121145255.png"),items:Array(
     {n:"Genesis NFT",v:650,ch:0,img:"IMG_3829.jpeg",c:"rc-red",gift:true},
@@ -1003,6 +1007,7 @@ const CASES={
     {n:"5 Звёзд",v:5,ch:55,img:"",ico:"✨",c:"rc-green",gift:false}
   )}
 };
+
 let curCase="daily",cMult=1,cFast=false,cSpin=false;
 function itemMedia(it){return it.img?`<img src="${it.img}" alt=""/>`:`<div style="font-size:28px;margin-bottom:2px;">${it.ico}</div>`;}
 function showItemInfo(idx){const it=CASES[curCase].items[idx];document.getElementById("itImg").src=it.img||CASES[curCase].img;document.getElementById("itName").textContent=it.n;document.getElementById("itVal").textContent=it.v+" ⭐";openM("itemM");}
