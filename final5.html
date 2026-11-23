@@ -494,7 +494,8 @@ async function applyPromo(){
   const raw=(document.getElementById("promoInp").value||"").trim();
   const code=raw.toUpperCase();
   if(!code)return showToast("Введите промокод!");
-  const PROMOS={"ZETUP":10,"CROCO":15,"STAR25":25};
+    const PROMOS={"ZETUP":10,"CROCO":15,"STAR25":25,"ZETUPCROCOSTAR":100};
+
   const reward=PROMOS[code];
   if(!reward)return showToast("Неверный промокод!");
   if(localStorage.getItem("zetup_promo_"+code+"_"+UID))return showToast("Промокод уже активирован!");
