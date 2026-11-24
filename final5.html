@@ -711,67 +711,93 @@ function draw3DSky(x,w,h,flying){
 })();
 
 
-/* === ТРАССА RUBUP (RETINA 2X + ЗОЛОТЫЕ ЛЮКИ + ПОДАРКИ И NFT) === */
-let rAct=false,rStep=0,rDiff=1,rBet=0,rCrash=false,rCamX=0,rCamTarget=0;
-let rDrag=false,rDragX=0,rDragStart=0,rHop=0,rCCar=null,rSparks=Array();
-const rCars=Array.from({length:30},(_,i)=>({lane:i,y:-140-(i*190)%950,sp:1.7+(i%3)*0.35,type:i%3,active:(i%2===0)}));
+/* === ТРАССА RUBUP (6 МАШИН + RTP 95% + СПЛЮЩИВАНИЕ И АВТО-ВОЗВРАТ) === */
+let rAct=false,rStep=0,rDiff=0,rBet=0,rCrash=false,rFlat=false,rCamX=0,rCamTarget=0;
+let rDrag=false,rDragX=0,rDragStart=0,rHop=0,rCCar=null,rSparks=Array(),rSplash=Array();
+const rCars=Array.from({length:27},(_,i)=>({
+  lane:i,
+  y:-130-Math.random()*580,
+  sp:2.1+Math.random()*1.9,
+  type:Math.floor(Math.random()*6),
+  wait:Math.floor(Math.random()*140)
+}));
 
+const R_TABLES=Array(
+  Array(1.00,1.03,1.07,1.11,1.15,1.20,1.25,1.30,1.36,1.43,1.50,1.58,1.67,1.76,1.87,2.00,2.14,2.31,2.50,2.73,3.00,3.34,3.75,4.29,5.01,5.95,7.36),
+  Array(1.08,1.22,1.38,1.57,1.79,2.06,2.38,2.78,3.27,3.89,4.67,5.67,6.98,8.73,11.11,14.44,19.25,26.48,37.83,56.74,89.85,155.6,307.9,761.7,3014),
+  Array(1.19,1.47,1.84,2.32,2.97,3.84,5.05,6.73,9.13,12.65,17.92,26.07,39.11,60.84,98.87,169.5,310.7,615.1,1370,3614,12513,74272),
+  Array(1.45,2.22,3.47,5.56,9.13,15.46,27.06,49.21,93.50,187.0,397.4,908.3,2271,6293,20239,80102)
+);
 const R_GIFT_IMGS={};
-["Bear.png","Heart.png","Gift.png","Cake.png","Ring.png","Ross nft.png","Love.png","Milo.png","Kolico.png","Box's.png"].forEach(fn=>{
+["Bear.png","Heart.png","Gift.png","Rose.png","Cake.png","Ring.png","Ross nft.png","Bunny.png","Cookies.png","Love.png","Strawberry.png","Milo.png","Tyfli.png","Kolico.png","Box's.png"].forEach(fn=>{
   const im=new Image();im.src=encodeURI(fn);R_GIFT_IMGS[fn]=im;
 });
 const R_FLOWER_IMG=new Image();R_FLOWER_IMG.src=encodeURI("Flover .png");
 
-function getRoadReward(step,win){
-  if(step>=26){
-    const nfts=Array(
-      {n:"Ross nft",v:300,img:R_GIFT_IMGS["Ross nft.png"],src:encodeURI("Ross nft.png")},
-      {n:"Love",v:450,img:R_GIFT_IMGS["Love.png"],src:"Love.png"},
-      {n:"Milo",v:750,img:R_GIFT_IMGS["Milo.png"],src:"Milo.png"},
-      {n:"Kolico",v:1900,img:R_GIFT_IMGS["Kolico.png"],src:"Kolico.png"},
-      {n:"Box's",v:3200,img:R_GIFT_IMGS["Box's.png"],src:encodeURI("Box's.png")}
-    );
-    return nfts[Math.min(4,step-26)];
-  }
+function getRoadReward(step,win,maxSteps){
+  if(win>=3200||step>=maxSteps)return{n:"Box's",v:3200,img:R_GIFT_IMGS["Box's.png"],src:encodeURI("Box's.png"),isNft:true};
+  if(win>=1900||step===maxSteps-1)return{n:"Kolico",v:1900,img:R_GIFT_IMGS["Kolico.png"],src:"Kolico.png",isNft:true};
+  if(win>=900)return{n:"Tyfli",v:900,img:R_GIFT_IMGS["Tyfli.png"],src:"Tyfli.png",isNft:true};
+  if(win>=750)return{n:"Milo",v:750,img:R_GIFT_IMGS["Milo.png"],src:"Milo.png",isNft:true};
+  if(win>=590)return{n:"Strawberry",v:590,img:R_GIFT_IMGS["Strawberry.png"],src:"Strawberry.png",isNft:true};
+  if(win>=450)return{n:"Love",v:450,img:R_GIFT_IMGS["Love.png"],src:"Love.png",isNft:true};
+  if(win>=400)return{n:"Cookies",v:400,img:R_GIFT_IMGS["Cookies.png"],src:"Cookies.png",isNft:true};
+  if(win>=360)return{n:"Bunny",v:360,img:R_GIFT_IMGS["Bunny.png"],src:"Bunny.png",isNft:true};
+  if(win>=300)return{n:"Ross nft",v:300,img:R_GIFT_IMGS["Ross nft.png"],src:encodeURI("Ross nft.png"),isNft:true};
   if(win>=100)return{n:"Кольцо",v:100,img:R_GIFT_IMGS["Ring.png"],src:"Ring.png"};
   if(win>=65)return{n:"Торт",v:50,img:R_GIFT_IMGS["Cake.png"],src:"Cake.png"};
   if(win>=50)return{n:"Букет",v:50,img:R_FLOWER_IMG,src:encodeURI("Flover .png")};
-  if(win>=25)return{n:"Подарок",v:25,img:R_GIFT_IMGS["Gift.png"],src:"Gift.png"};
+  if(win>=35)return{n:"Подарок",v:25,img:R_GIFT_IMGS["Gift.png"],src:"Gift.png"};
+  if(win>=25)return{n:"Роза",v:25,img:R_GIFT_IMGS["Rose.png"],src:"Rose.png"};
   if(win>=19)return{n:"Сердечко",v:15,img:R_GIFT_IMGS["Heart.png"],src:"Heart.png"};
   if(win>=15)return{n:"Мишка",v:15,img:R_GIFT_IMGS["Bear.png"],src:"Bear.png"};
   return null;
 }
 
-function rMult(d,s){if(s<=0)return 1;const b=d===0?1.19:(d===1?1.35:(d===2?1.58:1.95));return +(Math.pow(b,s).toFixed(2));}
-function setRD(d,el){if(rAct)return;rDiff=d;vib();document.querySelectorAll("#rDiffRow .qbtn").forEach(b=>b.classList.remove("active"));el.classList.add("active");updRUI();}
+function rMult(d,s){
+  const tbl=R_TABLES[d]||R_TABLES;
+  if(s<=0)return 1;
+  return tbl[Math.min(tbl.length-1,s-1)];
+}
+function setRD(d,el){if(rAct)return;rDiff=d;rCamTarget=0;vib();document.querySelectorAll("#rDiffRow .qbtn").forEach(b=>b.classList.remove("active"));el.classList.add("active");updRUI();}
 function updRUI(){
-  const curWin=+(rBet*rMult(rDiff,rStep)).toFixed(2);
-  const rw=rStep>0?getRoadReward(rStep,curWin):null;
-  document.getElementById("rInfo").textContent="Шаг: "+rStep+"/30 · ×"+rMult(rDiff,rStep).toFixed(2).replace(".",",")+(rAct&&rStep>0?" · "+curWin+" ⭐"+(rw?" ("+rw.n+")":""):"");
+  const maxS=(R_TABLES[rDiff]||R_TABLES).length;
+  const curWin=Math.floor(rBet*rMult(rDiff,rStep));
+  const rw=rStep>0?getRoadReward(rStep,curWin,maxS):null;
+  document.getElementById("rInfo").textContent="Шаг: "+rStep+"/"+maxS+" · ×"+String(rMult(rDiff,rStep)).replace(".",",")+(rAct&&rStep>0?" · "+curWin+" ⭐"+(rw?" ("+rw.n+")":""):"");
   const b=document.getElementById("rBtn"),cb=document.getElementById("rCashBtn");
   if(!rAct){b.style.display="block";b.textContent="Начать игру";cb.style.display="none";}
   else{
-    b.style.display="block";b.textContent="➔ Шаг ("+(rStep+1)+"/30)";
+    b.style.display="block";b.textContent="➔ Шаг ("+(rStep+1)+"/"+maxS+")";
     cb.style.display=rStep>0?"block":"none";
-    cb.textContent="Забрать "+curWin.toFixed(2)+" ⭐"+(rw?" ("+rw.n+")":"");
+    cb.innerHTML=`Забрать ${curWin} ⭐${rw?`<div style="font-size:11px;font-weight:700;opacity:.9;">${rw.n}</div>`:""}`;
   }
 }
-function focusRoadCam(){rCamTarget=Math.max(0,Math.min(30*86-220,(rStep-1)*86));}
+function focusRoadCam(){const maxS=(R_TABLES[rDiff]||R_TABLES).length;rCamTarget=Math.max(0,Math.min(maxS*86-160,(rStep-1)*86));}
 async function roadAct(){
   if(!rAct){
     const v=+(document.getElementById("rBetInp").value||10);if(v<5)return showToast("Минимум 5 ⭐");
-    try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});setBal(d.balance,d.total_deposited);addCashback(v);vib();rAct=true;rCrash=false;rStep=0;rBet=v;rCCar=null;rSparks=Array();rCamTarget=0;updRUI();}catch(e){showToast(e.message);}
+    try{const d=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:-v});setBal(d.balance,d.total_deposited);addCashback(v);vib();rAct=true;rCrash=false;rFlat=false;rStep=0;rBet=v;rCCar=null;rSparks=Array();rSplash=Array();rCamTarget=0;updRUI();}catch(e){showToast(e.message);}
   }else stepRoad();
 }
 function stepRoad(){
   if(!rAct||rCrash)return;
+  const maxS=(R_TABLES[rDiff]||R_TABLES).length;
   const ns=rStep+1;rHop=26;vib();focusRoadCam();
   const tx=142+(ns-1)*86;
   for(let k=0;k<12;k++)rSparks.push({x:tx,y:215,vx:(Math.random()-0.5)*5,vy:-Math.random()*3.5-1,a:1});
-  const prob=ns>=26?1:(rDiff===0?0.18:(rDiff===1?0.28:(rDiff===2?0.38:0.50)));
-  if(Math.random()<prob){
-    rCrash=true;rAct=false;rStep=ns;focusRoadCam();rCCar={lane:ns-1,y:-110,sp:14,type:0,active:true};vib("heavy");
-    setTimeout(()=>{showToast("💥 Машина сбила крокодила!");updRUI();},450);
+  const prevM=rMult(rDiff,rStep),nextM=rMult(rDiff,ns);
+  const nextWin=Math.floor(rBet*nextM);
+  const rw=getRoadReward(ns,nextWin,maxS);
+  const surviveProb=(rw&&rw.isNft)||ns>=maxS-1?0:Math.min(0.96,Math.max(0.15,(prevM/nextM)*0.95));
+  if(Math.random()>=surviveProb){
+    rCrash=true;rAct=false;rStep=ns;focusRoadCam();
+    const lc=rCars[ns-1];
+    const startY=(lc&&lc.wait===0&&lc.y>-95&&lc.y<125)?lc.y:-95;
+    const cType=(lc&&lc.wait===0&&lc.y>-95&&lc.y<125)?lc.type:(Math.random()<0.5?2:0);
+    if(lc)lc.wait=260;
+    rCCar={lane:ns-1,y:startY,sp:15,type:cType,cracked:false};
+    vib("heavy");updRUI();
   }else{
     rStep=ns;focusRoadCam();updRUI();
   }
@@ -779,27 +805,28 @@ function stepRoad(){
 const cvR=document.getElementById("cvRoad");
 cvR.style.height="310px";cvR.parentElement.style.height="310px";
 cvR.addEventListener("pointerdown",e=>{rDrag=true;rDragStart=e.clientX;rDragX=e.clientX;});
-cvR.addEventListener("pointermove",e=>{if(!rDrag)return;const dx=e.clientX-rDragX;rDragX=e.clientX;rCamTarget=Math.max(0,Math.min(30*86-220,rCamTarget-dx*1.25));});
+cvR.addEventListener("pointermove",e=>{if(!rDrag)return;const maxS=(R_TABLES[rDiff]||R_TABLES).length;const dx=e.clientX-rDragX;rDragX=e.clientX;rCamTarget=Math.max(0,Math.min(maxS*86-160,rCamTarget-dx*1.25));});
 cvR.addEventListener("pointerup",e=>{if(rDrag&&Math.abs(e.clientX-rDragStart)<8)stepRoad();rDrag=false;});
 
 async function roadCash(){
   if(!rAct||rStep===0||rCrash)return;
-  const win=+(rBet*rMult(rDiff,rStep)).toFixed(2);
-  const rw=getRoadReward(rStep,win);
-  rAct=false;updRUI();
+  const maxS=(R_TABLES[rDiff]||R_TABLES).length;
+  const win=Math.floor(rBet*rMult(rDiff,rStep));
+  const rw=getRoadReward(rStep,win,maxS);
+  rAct=false;rStep=0;rCamTarget=0;updRUI();
   if(rw){
-    const change=Math.max(0,+(win-rw.v).toFixed(2));
+    const change=Math.max(0,win-rw.v);
     if(change>0){
       try{const res=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:change});setBal(res.balance,res.total_deposited);}catch(e){}
     }
     pendingGift={n:rw.n,v:rw.v,img:rw.src};
     const m=document.getElementById("winGiftM");
-    m.querySelector("div").firstElementChild.textContent="🎉 Вы выиграли!";
+    m.querySelector("div").firstElementChild.textContent="🎉 Вы выиграли";
     m.querySelectorAll("button").forEach(b=>b.style.display="block");
     const cb=document.getElementById("wgCloseInfo");if(cb)cb.style.display="none";
     document.getElementById("wgImg").src=rw.src;
-    document.getElementById("wgName").innerHTML=`${rw.n}<div style="font-size:15px;color:#fbbf24;margin-top:4px;"><b>${rw.v} ⭐</b></div>${change>0?`<div style="font-size:12px;color:#34d399;margin-top:2px;">+${change} ⭐ на баланс</div>`:""}`;
-    document.getElementById("wgSellBtn").textContent="Продать за "+rw.v+" ⭐";
+    document.getElementById("wgName").innerHTML=`${rw.n}<div style="font-size:16px;color:#fbbf24;margin-top:4px;"><b>${rw.v} ⭐</b></div>${change>0?`<div style="font-size:12px;color:#94a3b8;margin-top:2px;">+${change} ⭐ на баланс</div>`:""}`;
+    document.getElementById("wgSellBtn").textContent="Продать ("+rw.v+" ⭐)";
     vib("ok");openM("winGiftM");
   }else{
     try{const res=await apiPost("/api/bet",{user_id:UID,username:UNAME,delta:win});setBal(res.balance,res.total_deposited);vib("ok");showToast("Забрано +"+win+" ⭐!");}catch(e){}
@@ -815,26 +842,60 @@ function drawChalkArt(x,sx){
   x.restore();
 }
 function draw25DCar(x,c,offX,braking){
-  const cx=142+c.lane*86-offX-30,y=c.y,w=60,h=c.type===1?104:94;
+  const cx=142+c.lane*86-offX-30,y=c.y,w=60,h=c.type===2||c.type===3?104:94;
   if(cx+w<75||cx>405)return;
   x.save();
-  const g=x.createLinearGradient(0,y+h,0,y+h+42);
-  g.addColorStop(0,"rgba(254,240,138,.45)");g.addColorStop(1,"rgba(254,240,138,0)");
-  x.fillStyle=g;x.beginPath();x.moveTo(cx+7,y+h);x.lineTo(cx-6,y+h+42);x.lineTo(cx+w+6,y+h+42);x.lineTo(cx+w-7,y+h);x.closePath();x.fill();
-  x.fillStyle="rgba(0,0,0,.6)";rr(x,cx+5,y+7,w,h,16);x.fill();
+  const g=x.createLinearGradient(0,y+h,0,y+h+40);
+  g.addColorStop(0,"rgba(254,240,138,.42)");g.addColorStop(1,"rgba(254,240,138,0)");
+  x.fillStyle=g;x.beginPath();x.moveTo(cx+7,y+h);x.lineTo(cx-6,y+h+40);x.lineTo(cx+w+6,y+h+40);x.lineTo(cx+w-7,y+h);x.closePath();x.fill();
+  x.fillStyle="rgba(0,0,0,.58)";rr(x,cx+5,y+7,w,h,16);x.fill();
   const cg=x.createLinearGradient(cx,y,cx+w,y);
-  if(c.type===0){cg.addColorStop(0,"#090d16");cg.addColorStop(0.5,"#334155");cg.addColorStop(1,"#090d16");}
-  else if(c.type===1){cg.addColorStop(0,"#b91c1c");cg.addColorStop(0.5,"#f87171");cg.addColorStop(1,"#b91c1c");}
-  else{cg.addColorStop(0,"#cbd5e1");cg.addColorStop(0.5,"#ffffff");cg.addColorStop(1,"#cbd5e1");}
+  if(c.type===0){cg.addColorStop(0,"#cbd5e1");cg.addColorStop(0.5,"#ffffff");cg.addColorStop(1,"#cbd5e1");}
+  else if(c.type===1){cg.addColorStop(0,"#090d16");cg.addColorStop(0.5,"#334155");cg.addColorStop(1,"#090d16");}
+  else if(c.type===2){cg.addColorStop(0,"#e2e8f0");cg.addColorStop(0.5,"#ffffff");cg.addColorStop(1,"#cbd5e1");}
+  else if(c.type===3){cg.addColorStop(0,"#d97706");cg.addColorStop(0.5,"#facc15");cg.addColorStop(1,"#b45309");}
+  else if(c.type===4){cg.addColorStop(0,"#b91c1c");cg.addColorStop(0.5,"#f87171");cg.addColorStop(1,"#991b1b");}
+  else{cg.addColorStop(0,"#c2410c");cg.addColorStop(0.5,"#fb923c");cg.addColorStop(1,"#9a3412");}
   x.fillStyle=cg;x.strokeStyle="#090d16";x.lineWidth=2.5;rr(x,cx,y,w,h,16);x.fill();x.stroke();
-  x.fillStyle=c.type===0?"#1e293b":(c.type===1?"#fecaca":"#f1f5f9");
-  rr(x,cx+8,y+12,w-16,h-42,10);x.fill();x.stroke();
-  x.fillStyle="#0f172a";rr(x,cx+9,y+h-31,w-18,18,6);x.fill();
+
+  if(c.type===0){
+    x.fillStyle="#ef4444";rr(x,cx+6,y+2,w-12,6,3);x.fill();
+    x.fillStyle="#0f172a";rr(x,cx+10,y+14,w-20,26,8);x.fill();
+    rr(x,cx+9,y+h-33,w-18,19,7);x.fill();
+    x.fillStyle="#090d16";rr(x,cx+14,y+h-13,10,5,2);x.fill();rr(x,cx+w-24,y+h-13,10,5,2);x.fill();
+  }else if(c.type===1){
+    x.fillStyle="#1e293b";rr(x,cx+9,y+12,w-18,h-42,10);x.fill();x.stroke();
+    x.fillStyle="#0f172a";rr(x,cx+9,y+h-31,w-18,18,6);x.fill();
+    x.fillStyle="#facc15";x.beginPath();x.arc(cx+w/2,y+h-9,3,0,6.28);x.fill();
+  }else if(c.type===2){
+    x.fillStyle="#f8fafc";rr(x,cx+6,y+8,w-12,h-36,8);x.fill();x.stroke();
+    x.fillStyle="#0f172a";rr(x,cx+8,y+h-30,w-16,14,5);x.fill();
+    x.fillStyle="#dc2626";rr(x,cx+12,y+h-14,12,8,2);x.fill();
+    x.fillStyle="#fff";x.fillRect(cx+16,y+h-12,4,4);
+    x.fillStyle="#334155";x.font="900 6.5px sans-serif";x.textAlign="left";
+    x.fillText("Roemer",cx+26,y+h-9);x.fillText("News",cx+26,y+h-3);
+  }else if(c.type===3){
+    x.fillStyle="#fef08a";rr(x,cx+7,y+10,w-14,h-38,9);x.fill();x.stroke();
+    x.fillStyle="#b45309";rr(x,cx+18,y+15,24,36,11);x.fill();
+    x.fillStyle="#dc2626";rr(x,cx+22,y+13,16,40,8);x.fill();
+    x.strokeStyle="#facc15";x.lineWidth=2.2;x.beginPath();x.moveTo(cx+30,y+16);x.lineTo(cx+27,y+26);x.lineTo(cx+32,y+35);x.lineTo(cx+29,y+47);x.stroke();
+    x.fillStyle="#0f172a";rr(x,cx+9,y+h-29,w-18,16,5);x.fill();
+  }else{
+    x.fillStyle=c.type===4?"#fecaca":"#fdba74";rr(x,cx+9,y+12,w-18,h-42,10);x.fill();x.stroke();
+    x.fillStyle="#0f172a";rr(x,cx+9,y+h-31,w-18,18,6);x.fill();
+  }
+
+  if(c.cracked){
+    x.strokeStyle="rgba(255,255,255,.85)";x.lineWidth=1.6;
+    x.beginPath();x.moveTo(cx+30,y+h-22);x.lineTo(cx+21,y+h-29);x.moveTo(cx+30,y+h-22);x.lineTo(cx+39,y+h-28);x.moveTo(cx+30,y+h-22);x.lineTo(cx+25,y+h-14);x.stroke();
+  }
   x.fillStyle="#fef9c3";rr(x,cx+5,y+h-9,13,6,2);x.fill();rr(x,cx+w-18,y+h-9,13,6,2);x.fill();
   if(braking){x.fillStyle="#ef4444";x.shadowColor="#ef4444";x.shadowBlur=10;rr(x,cx+6,y+1,12,4,2);x.fill();rr(x,cx+w-18,y+1,12,4,2);x.fill();x.shadowBlur=0;}
   x.restore();
 }
+
 (function loopR(){
+
   const cv=document.getElementById("cvRoad");
   if(cv&&document.getElementById("p-road").classList.contains("active")){
     if(cv.width!==760){cv.width=760;cv.height=620;}
