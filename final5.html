@@ -895,7 +895,6 @@ function draw25DCar(x,c,offX,braking){
 }
 
 (function loopR(){
-
   const cv=document.getElementById("cvRoad");
   if(cv&&document.getElementById("p-road").classList.contains("active")){
     if(cv.width!==760){cv.width=760;cv.height=620;}
@@ -904,9 +903,10 @@ function draw25DCar(x,c,offX,braking){
     rCamX+=(rCamTarget-rCamX)*0.22;
     x.clearRect(0,0,w,h);
     x.fillStyle="#151828";x.fillRect(0,0,w,h);
+    const tbl=R_TABLES[rDiff]||R_TABLES,maxS=tbl.length;
     const betNow=Math.max(5,+(document.getElementById("rBetInp").value||10));
 
-    for(let l=0;l<30;l++){
+    for(let l=0;l<maxS;l++){
       const lx=99+l*86-rCamX;
       if(lx>0&&lx<w){
         x.strokeStyle="rgba(148,163,184,.25)";x.lineWidth=2.5;x.setLineDash(Array(14,14));
@@ -916,46 +916,57 @@ function draw25DCar(x,c,offX,braking){
       const passed=l<rStep-1||(l===rStep-1&&!rAct&&!rCrash);
       const current=rAct&&l===rStep-1;
       if(mx>-45&&mx<w+45){
-        const stepWin=+(betNow*rMult(rDiff,st)).toFixed(0);
-        const rw=getRoadReward(st,stepWin);
+        const stepWin=Math.floor(betNow*rMult(rDiff,st));
+        const rw=getRoadReward(st,stepWin,maxS);
         const ry=112;
-        x.fillStyle="rgba(26,31,54,.92)";x.beginPath();x.arc(mx,ry,26,0,Math.PI*2);x.fill();
-        x.strokeStyle=st>=26?"rgba(168,85,247,.65)":(rw?"rgba(250,204,21,.55)":"rgba(148,163,184,.28)");
-        x.lineWidth=2.5;x.stroke();
+        x.fillStyle="rgba(26,31,54,.92)";x.beginPath();x.arc(mx,ry,26,0,6.28);x.fill();
+        x.strokeStyle=current?"#c084fc":(rw?"rgba(250,204,21,.55)":"rgba(148,163,184,.28)");
+        x.lineWidth=current?3.5:2.5;x.stroke();
         if(rw&&rw.img&&rw.img.complete&&rw.img.naturalWidth>0){
           x.drawImage(rw.img,mx-19,ry-19,38,38);
+          x.fillStyle="#0f172a";rr(x,mx-20,ry-33,40,14,5);x.fill();
+          x.strokeStyle="rgba(250,204,21,.65)";x.lineWidth=1;x.stroke();
+          x.fillStyle="#fde047";x.font="900 8.5px sans-serif";x.textAlign="center";
+          x.fillText(rw.v+"⭐",mx,ry-23);
         }else{
           x.fillStyle="#facc15";x.font="bold 22px sans-serif";x.textAlign="center";x.fillText("★",mx,ry+8);
         }
         x.fillStyle="#1e243d";rr(x,mx-26,ry+29,52,18,7);x.fill();
         x.fillStyle="#facc15";x.font="900 10px sans-serif";x.textAlign="center";
-        x.fillText(rw?rw.n:(stepWin+" ⭐"),mx,ry+41);
+        x.fillText(stepWin+" ⭐",mx,ry+41);
 
-        x.fillStyle="rgba(0,0,0,.45)";x.beginPath();x.arc(mx+2,my+4,28,0,Math.PI*2);x.fill();
+        x.fillStyle="rgba(0,0,0,.45)";x.beginPath();x.arc(mx+2,my+4,28,0,6.28);x.fill();
         if(passed){
           const gg=x.createRadialGradient(mx-8,my-8,4,mx,my,28);
           gg.addColorStop(0,"#fde047");gg.addColorStop(0.65,"#eab308");gg.addColorStop(1,"#a16207");
-          x.fillStyle=gg;x.beginPath();x.arc(mx,my,28,0,Math.PI*2);x.fill();
+          x.fillStyle=gg;x.beginPath();x.arc(mx,my,28,0,6.28);x.fill();
           x.strokeStyle="#fef08a";x.lineWidth=2.5;x.stroke();
           x.strokeStyle="#ca8a04";x.lineWidth=2;
           Array(-8,0,8).forEach(dy=>{x.beginPath();x.moveTo(mx-13,my+dy);x.lineTo(mx+13,my+dy);x.stroke();});
         }else{
-          x.fillStyle="#222842";x.beginPath();x.arc(mx,my,28,0,Math.PI*2);x.fill();
+          x.fillStyle="#222842";x.beginPath();x.arc(mx,my,28,0,6.28);x.fill();
           x.strokeStyle=current?"#10b981":"#39426b";x.lineWidth=3;x.stroke();
           x.strokeStyle="#161b2e";x.lineWidth=2.5;
           Array(-9,0,9).forEach(dy=>{x.beginPath();x.moveTo(mx-14,my+dy);x.lineTo(mx+14,my+dy);x.stroke();});
         }
         x.fillStyle=current?"#4f46e5":"#1e243d";rr(x,mx-27,my+32,54,20,7);x.fill();
         x.fillStyle="#fff";x.font="900 11px sans-serif";x.textAlign="center";
-        x.fillText("×"+rMult(rDiff,st).toFixed(2).replace(".",","),mx,my+46);
+        x.fillText("×"+String(rMult(rDiff,st)).replace(".",","),mx,my+46);
 
         if(rAct&&l<rStep){
           x.fillStyle="#94a3b8";x.fillRect(mx-22,162,4,14);x.fillRect(mx+18,162,4,14);
           x.fillStyle="#facc15";rr(x,mx-26,154,52,10,3);x.fill();
           x.fillStyle="#0f172a";
-          for(let bx=-20;bx<20;bx+=12){x.fillRect(mx+bx,154,6,10);}
+          for(let bx=-20;bx<20;bx+=12)x.fillRect(mx+bx,154,6,10);
         }
       }
+    }
+
+    const finX=99+maxS*86-rCamX;
+    if(finX<w+20){
+      x.fillStyle="#64748b";x.fillRect(finX,0,12,h);
+      x.fillStyle="#94a3b8";x.fillRect(finX+12,0,120,h);
+      for(let py=4;py<h;py+=48){x.fillStyle="#cbd5e1";rr(x,finX+16,py,86,42,4);x.fill();}
     }
 
     const sx=-rCamX;
@@ -967,19 +978,48 @@ function draw25DCar(x,c,offX,braking){
     }
 
     rCars.forEach(c=>{
-      if(!c.active)return;
+      if(c.lane>=maxS)return;
       if(rCrash&&c.lane===rStep-1)return;
+      if(c.wait>0){c.wait--;return;}
       const safeLane=rAct&&c.lane<rStep;
       let braking=false;
       if(safeLane&&c.y>=48&&c.y<=76){braking=true;}
-      else{c.y+=c.sp;if(c.y>h+115)c.y=-140-Math.random()*220;}
+      else{
+        c.y+=c.sp;
+        if(c.y>h+115){c.y=-125;c.wait=15+Math.floor(Math.random()*110);c.type=Math.floor(Math.random()*6);c.sp=2.2+Math.random()*1.8;}
+      }
       draw25DCar(x,c,rCamX,braking);
     });
-    if(rCCar){if(rCCar.y<h+115)rCCar.y+=rCCar.sp;draw25DCar(x,rCCar,rCamX,false);}
 
     const targetX=(rStep===0?46:(142+(rStep-1)*86))-rCamX;
     if(rHop>0)rHop*=0.78;
     const tNow=Date.now(),breath=Math.sin(tNow/200)*0.055,wiggle=Math.sin(tNow/260)*0.07,cy=178-rHop;
+    x.fillStyle="rgba(0,0,0,.48)";x.beginPath();x.ellipse(targetX,235,25-rHop*0.45,9,0,0,6.28);x.fill();
+    x.save();x.translate(targetX,cy+28);
+    if(rCrash){
+      x.translate(0,16);x.scale(1.55,0.28);
+    }else{
+      x.rotate(wiggle+(rHop>4?0.12:0));x.scale(1-breath+(rHop*0.01),1+breath+(rHop*0.015));
+    }
+    x.shadowColor="rgba(16,185,129,.45)";x.shadowBlur=16;
+    if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,-32,-32,64,64);
+    else{x.font="42px serif";x.textAlign="center";x.fillText("🐊",0,14);}
+    x.restore();
+
+    if(rCCar){
+      if(rCCar.y<135)rCCar.y+=14;
+      draw25DCar(x,rCCar,rCamX,true);
+    }
+
+    rSparks.forEach(sp=>{sp.x+=sp.vx;sp.y+=sp.vy;sp.vy+=0.25;sp.a-=0.04;if(sp.a>0){x.fillStyle=`rgba(255,255,255,${sp.a})`;x.beginPath();x.arc(sp.x-rCamX,sp.y,3.5,0,6.28);x.fill();}});
+    rSparks=rSparks.filter(sp=>sp.a>0);
+
+    x.fillStyle="rgba(148,163,184,.75)";x.font="700 10px sans-serif";x.textAlign="right";x.fillText("← Листай дорогу пальцем →",w-10,16);
+    x.restore();
+  }
+  requestAnimationFrame(loopR);
+})();
+
     x.fillStyle="rgba(0,0,0,.48)";x.beginPath();x.ellipse(targetX,235,25-rHop*0.45,9,0,0,Math.PI*2);x.fill();
     x.save();x.translate(targetX,cy+28);x.rotate(wiggle+(rHop>4?0.12:0));x.scale(1-breath+(rHop*0.01),1+breath+(rHop*0.015));
     x.shadowColor="rgba(16,185,129,.45)";x.shadowBlur=16;
