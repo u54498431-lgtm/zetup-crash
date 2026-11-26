@@ -1018,24 +1018,7 @@ function draw25DCar(x,c,offX,braking){
     x.restore();
   }
   requestAnimationFrame(loopR);
-})();
 
-    x.fillStyle="rgba(0,0,0,.48)";x.beginPath();x.ellipse(targetX,235,25-rHop*0.45,9,0,0,Math.PI*2);x.fill();
-    x.save();x.translate(targetX,cy+28);x.rotate(wiggle+(rHop>4?0.12:0));x.scale(1-breath+(rHop*0.01),1+breath+(rHop*0.015));
-    x.shadowColor="rgba(16,185,129,.45)";x.shadowBlur=16;
-    if(crocImg.complete&&crocImg.naturalWidth>0)x.drawImage(crocImg,-32,-32,64,64);
-    else{x.font="42px serif";x.textAlign="center";x.fillText("🐊",0,14);}
-    x.restore();
-
-    rSparks.forEach(sp=>{sp.x+=sp.vx;sp.y+=sp.vy;sp.vy+=0.25;sp.a-=0.05;if(sp.a>0){x.fillStyle=`rgba(250,204,21,${sp.a})`;x.beginPath();x.arc(sp.x-rCamX,sp.y,3.5,0,Math.PI*2);x.fill();}});
-    rSparks=rSparks.filter(sp=>sp.a>0);
-    if(rCrash){x.fillStyle="#ef4444";x.beginPath();x.arc(targetX,cy+26,28,0,6.28);x.fill();x.fillStyle="#fff";x.font="900 20px sans-serif";x.textAlign="center";x.fillText("💥",targetX,cy+33);}
-
-    x.fillStyle="rgba(148,163,184,.75)";x.font="700 10px sans-serif";x.textAlign="right";x.fillText("← Листай дорогу пальцем →",w-10,16);
-    x.restore();
-  }
-  requestAnimationFrame(loopR);
-})();
 
 
 /* === МИНЫ RUBUP (3-24 + ЛЕНТА ИКСОВ) === */
