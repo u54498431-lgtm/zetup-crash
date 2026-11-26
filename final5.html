@@ -890,7 +890,8 @@ function draw25DCar(x,c,offX,braking){
     x.beginPath();x.moveTo(cx+30,y+h-22);x.lineTo(cx+21,y+h-29);x.moveTo(cx+30,y+h-22);x.lineTo(cx+39,y+h-28);x.moveTo(cx+30,y+h-22);x.lineTo(cx+25,y+h-14);x.stroke();
   }
   x.fillStyle="#fef9c3";rr(x,cx+5,y+h-9,13,6,2);x.fill();rr(x,cx+w-18,y+h-9,13,6,2);x.fill();
-  if(braking){x.fillStyle="#ef4444";x.shadowColor="#ef4444";x.shadowBlur=10;rr(x,cx+6,y+1,12,4,2);x.fill();rr(x,cx+w-18,y+1,12,4,2);x.fill();x.shadowBlur=0;}
+  if(braking){x.fillStyle="#ef4444";rr(x,cx+6,y+1,12,4,2);x.fill();rr(x,cx+w-18,y+1,12,4,2);x.fill();}
+
   x.restore();
 }
 
